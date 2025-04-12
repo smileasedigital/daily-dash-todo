@@ -2,14 +2,8 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-
-// Mock user type - in a real app, this would come from your auth provider
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  photoURL?: string;
-}
+import { Session, User } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -37,49 +31,64 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Check if user is already logged in (from localStorage in this mock version)
+  // Set up auth state listener
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        setCurrentUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error('Error parsing stored user:', error);
-        localStorage.removeItem('user');
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setCurrentUser(session?.user ?? null);
+        setLoading(false);
+
+        // Use setTimeout to avoid potential deadlocks
+        if (session?.user) {
+          setTimeout(() => {
+            console.log("Auth state changed:", event, session?.user.id);
+          }, 0);
+        }
       }
-    }
-    setLoading(false);
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setCurrentUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  // Mock Google Sign In
+  // Sign in with Google
   const signInWithGoogle = async () => {
     setLoading(true);
     try {
-      // This is a mock - in a real app, you'd use Firebase Auth or another provider
-      const mockUser: User = {
-        id: 'mock-user-id',
-        name: 'John Doe',
-        email: 'john.doe@example.com',
-        photoURL: 'https://ui-avatars.com/api/?name=John+Doe&background=random'
-      };
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin + '/dashboard'
+        }
+      });
       
-      setCurrentUser(mockUser);
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      toast.success('Signed in successfully');
-      navigate('/dashboard');
+      if (error) {
+        throw error;
+      }
+      // No need to navigate here as the redirectTo will handle it
     } catch (error) {
       console.error('Error signing in with Google:', error);
-      toast.error('Failed to sign in');
-    } finally {
+      toast.error('Failed to sign in with Google');
       setLoading(false);
     }
   };
 
+  // Sign out
   const signOut = async () => {
     setLoading(true);
     try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        throw error;
+      }
       setCurrentUser(null);
-      localStorage.removeItem('user');
       toast.info('Signed out');
       navigate('/login');
     } catch (error) {
