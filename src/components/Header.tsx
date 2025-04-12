@@ -8,6 +8,34 @@ import { LogOut } from 'lucide-react';
 const Header: React.FC = () => {
   const { currentUser, signOut } = useAuth();
 
+  // Helper functions to safely access user properties
+  const getUserInitial = () => {
+    if (!currentUser) return '';
+    
+    // Try to get name from user metadata if available
+    const userMeta = currentUser.user_metadata;
+    if (userMeta?.name && typeof userMeta.name === 'string') {
+      return userMeta.name.charAt(0).toUpperCase();
+    }
+    
+    // Fall back to email
+    if (currentUser.email) {
+      return currentUser.email.charAt(0).toUpperCase();
+    }
+    
+    return 'U'; // Default fallback
+  };
+
+  const getUserAvatar = () => {
+    if (!currentUser?.user_metadata) return null;
+    return currentUser.user_metadata.avatar_url || currentUser.user_metadata.picture;
+  };
+
+  const getUserName = () => {
+    if (!currentUser?.user_metadata) return 'User';
+    return currentUser.user_metadata.name || currentUser.user_metadata.full_name || currentUser.email || 'User';
+  };
+
   return (
     <header className="bg-white sticky top-0 z-10 border-b border-gray-100">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
@@ -17,9 +45,9 @@ const Header: React.FC = () => {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
               <Avatar className="h-8 w-8 border border-gray-100">
-                <AvatarImage src={currentUser.photoURL} alt={currentUser.name} />
+                <AvatarImage src={getUserAvatar()} alt={getUserName()} />
                 <AvatarFallback>
-                  {currentUser.name.charAt(0).toUpperCase()}
+                  {getUserInitial()}
                 </AvatarFallback>
               </Avatar>
             </div>

@@ -11,13 +11,15 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 
+// Create a new QueryClient instance outside of the component
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
-      <TooltipProvider>
-        <AuthProvider>
+      {/* Move TooltipProvider inside AuthProvider */}
+      <AuthProvider>
+        <TooltipProvider>
           <TasksProvider>
             <Toaster />
             <Sonner />
@@ -28,8 +30,8 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </TasksProvider>
-        </AuthProvider>
-      </TooltipProvider>
+        </TooltipProvider>
+      </AuthProvider>
     </BrowserRouter>
   </QueryClientProvider>
 );
