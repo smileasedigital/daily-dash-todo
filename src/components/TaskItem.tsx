@@ -71,15 +71,17 @@ const TaskItem: React.FC<TaskItemProps> = ({
   return (
     <>
       <div className={cn(
-        "flex items-center gap-3 py-3 px-4 rounded-lg border border-gray-100 bg-white hover:bg-gray-50 transition-all",
-        task.completed && "bg-gray-50",
+        "flex items-center gap-3 py-3 px-4 rounded-lg border",
+        "bg-white hover:bg-gray-50 transition-all",
+        "dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700",
+        task.completed && "bg-gray-50 dark:bg-gray-700/50",
         task.stakes && !task.completed && "border-l-4 border-l-amber-400"
       )}>
         <Checkbox 
           checked={task.completed} 
           onCheckedChange={() => handleToggle()}
           className={cn(
-            task.completed ? 'border-todo-green text-todo-green' : 'border-gray-300',
+            task.completed ? 'border-todo-green text-todo-green' : 'border-gray-300 dark:border-gray-600',
           )}
         />
 
@@ -91,7 +93,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
               onBlur={handleUpdate}
               onKeyDown={handleKeyDown}
               autoFocus
-              className="flex-1"
+              className="flex-1 dark:bg-gray-700 dark:text-white"
             />
             <div className="flex items-center gap-1">
               <Button
@@ -120,7 +122,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
             <div className="flex-1">
               <p 
                 className={cn(
-                  "transition-all",
+                  "transition-all dark:text-gray-200",
                   task.completed && "task-done"
                 )}
               >
@@ -128,14 +130,14 @@ const TaskItem: React.FC<TaskItemProps> = ({
               </p>
               
               {task.stakes && (
-                <div className="flex items-center mt-1 text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-sm inline-flex">
+                <div className="flex items-center mt-1 text-xs text-amber-700 bg-amber-50 dark:bg-amber-900/30 dark:text-amber-300 px-2 py-0.5 rounded-sm inline-flex">
                   <Target className="h-3 w-3 mr-1" />
                   <span>{task.stakes}</span>
                 </div>
               )}
               
               {hasShares && (
-                <div className="flex items-center mt-1 text-xs text-blue-700 bg-blue-50 px-2 py-0.5 rounded-sm inline-flex ml-1">
+                <div className="flex items-center mt-1 text-xs text-blue-700 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-300 px-2 py-0.5 rounded-sm inline-flex ml-1">
                   <Share2 className="h-3 w-3 mr-1" />
                   <span>Shared with {task.sharedWith?.length}</span>
                 </div>

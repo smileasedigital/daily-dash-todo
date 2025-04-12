@@ -35,19 +35,19 @@ const StreakDisplay: React.FC<StreakDisplayProps> = ({ minimal = false }) => {
         <Flame 
           className={cn(
             "h-5 w-5",
-            streak.currentStreak > 0 ? "text-orange-500" : "text-gray-400"
+            streak.current_streak > 0 ? "text-orange-500" : "text-gray-400"
           )} 
         />
-        <span className="font-medium">{streak.currentStreak} day{streak.currentStreak !== 1 ? 's' : ''}</span>
+        <span className="font-medium">{streak.current_streak} day{streak.current_streak !== 1 ? 's' : ''}</span>
       </div>
     );
   }
 
   // Calculate milestone status
   const milestones = [
-    { days: 7, achieved: streak.currentStreak >= 7 },
-    { days: 30, achieved: streak.currentStreak >= 30 },
-    { days: 100, achieved: streak.currentStreak >= 100 },
+    { days: 7, achieved: streak.current_streak >= 7 },
+    { days: 30, achieved: streak.current_streak >= 30 },
+    { days: 100, achieved: streak.current_streak >= 100 },
   ];
 
   return (
@@ -57,7 +57,7 @@ const StreakDisplay: React.FC<StreakDisplayProps> = ({ minimal = false }) => {
           <CardTitle className="text-lg">Your Streak</CardTitle>
           <Trophy className={cn(
             "h-5 w-5",
-            streak.longestStreak >= 7 ? "text-amber-500" : "text-gray-300"
+            streak.longest_streak >= 7 ? "text-amber-500" : "text-gray-300"
           )} />
         </div>
         <CardDescription>Keep your momentum going!</CardDescription>
@@ -68,7 +68,7 @@ const StreakDisplay: React.FC<StreakDisplayProps> = ({ minimal = false }) => {
             <div 
               className={cn(
                 "h-20 w-20 rounded-full flex items-center justify-center",
-                streak.currentStreak > 0 
+                streak.current_streak > 0 
                   ? "bg-gradient-to-br from-orange-500 to-amber-500 text-white" 
                   : "bg-gray-100 text-gray-400"
               )}
@@ -76,17 +76,17 @@ const StreakDisplay: React.FC<StreakDisplayProps> = ({ minimal = false }) => {
               <Flame className="h-10 w-10" />
             </div>
             <div className="absolute -bottom-3 bg-white px-3 py-1 rounded-full border border-gray-100 shadow-sm">
-              <span className="font-bold text-lg">{streak.currentStreak}</span>
-              <span className="text-sm text-gray-500 ml-1">day{streak.currentStreak !== 1 ? 's' : ''}</span>
+              <span className="font-bold text-lg">{streak.current_streak}</span>
+              <span className="text-sm text-gray-500 ml-1">day{streak.current_streak !== 1 ? 's' : ''}</span>
             </div>
           </div>
         </div>
         
         <div className="text-center mb-2">
-          <p className="text-sm text-gray-500">Best streak: <span className="font-medium text-gray-700">{streak.longestStreak} days</span></p>
-          {streak.lastCompletedDate && (
+          <p className="text-sm text-gray-500">Best streak: <span className="font-medium text-gray-700">{streak.longest_streak} days</span></p>
+          {streak.last_completed_date && (
             <p className="text-xs text-gray-500 mt-1">
-              Last completed: <span className="font-medium">{new Date(streak.lastCompletedDate).toLocaleDateString()}</span>
+              Last completed: <span className="font-medium">{new Date(streak.last_completed_date).toLocaleDateString()}</span>
             </p>
           )}
         </div>

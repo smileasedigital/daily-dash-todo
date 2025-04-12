@@ -1,42 +1,38 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./contexts/AuthContext";
-import { TasksProvider } from "./contexts/TasksContext";
-import { StreakProvider } from "./contexts/StreakContext";
-import Index from "./pages/Index";
-import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
-import NotFound from "./pages/NotFound";
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Toaster } from 'sonner';
+import { AuthProvider } from './contexts/AuthContext';
+import { TasksProvider } from './contexts/TasksContext';
+import { StreakProvider } from './contexts/StreakContext';
+import { ThemeProvider } from './contexts/ThemeContext'; // Add ThemeProvider import
 
-// Create a new QueryClient instance outside of the component
-const queryClient = new QueryClient();
+import Index from './pages/Index';
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+import NotFound from './pages/NotFound';
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <BrowserRouter>
-      {/* Move TooltipProvider inside AuthProvider */}
+import './App.css';
+
+function App() {
+  return (
+    <ThemeProvider>
       <AuthProvider>
-        <TooltipProvider>
-          <TasksProvider>
-            <StreakProvider>
-              <Toaster />
-              <Sonner />
+        <TasksProvider>
+          <StreakProvider>
+            <Router>
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
-            </StreakProvider>
-          </TasksProvider>
-        </TooltipProvider>
+            </Router>
+            <Toaster position="top-right" />
+          </StreakProvider>
+        </TasksProvider>
       </AuthProvider>
-    </BrowserRouter>
-  </QueryClientProvider>
-);
+    </ThemeProvider>
+  );
+}
 
 export default App;

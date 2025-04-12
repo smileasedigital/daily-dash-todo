@@ -52,6 +52,8 @@ export interface ExtendedDatabase extends OriginalDatabase {
           longest_streak?: number;
           last_completed_date?: string | null;
           streak_history?: Array<{date: string; streak: number}> | null;
+          created_at?: string;
+          updated_at?: string;
         };
         Update: {
           id?: string;
@@ -60,6 +62,8 @@ export interface ExtendedDatabase extends OriginalDatabase {
           longest_streak?: number;
           last_completed_date?: string | null;
           streak_history?: Array<{date: string; streak: number}> | null;
+          created_at?: string;
+          updated_at?: string;
         };
         Relationships: [
           {

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -53,7 +52,6 @@ const Dashboard: React.FC = () => {
     }
   }, [currentUser, loading, navigate]);
 
-  // Calculate task summary
   useEffect(() => {
     if (tasks.length === 0) return;
     
@@ -126,7 +124,7 @@ const Dashboard: React.FC = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4">
-                  <div className="text-4xl font-bold">{streak?.currentStreak || 0}</div>
+                  <div className="text-4xl font-bold">{streak?.current_streak || 0}</div>
                   <p className="text-sm text-gray-500 mt-1">consecutive days</p>
                 </CardContent>
               </Card>
@@ -139,7 +137,7 @@ const Dashboard: React.FC = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4">
-                  <div className="text-4xl font-bold">{streak?.longestStreak || 0}</div>
+                  <div className="text-4xl font-bold">{streak?.longest_streak || 0}</div>
                   <p className="text-sm text-gray-500 mt-1">days achieved</p>
                 </CardContent>
               </Card>

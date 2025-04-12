@@ -3,7 +3,13 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "npm:resend@2.0.0";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+// Access the Resend API key from environment variables
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+if (!RESEND_API_KEY) {
+  console.error("RESEND_API_KEY is not set. Email functionality will not work!");
+}
+
+const resend = new Resend(RESEND_API_KEY);
 const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
 const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
@@ -28,7 +34,14 @@ serve(async (req) => {
   }
 
   try {
+    // Check if Resend API key is available
+    if (!RESEND_API_KEY) {
+      throw new Error("RESEND_API_KEY is not set. Please add it in the Supabase Edge Function configuration.");
+    }
+
     const { taskId, taskTitle, recipientEmail, senderName, senderEmail }: ShareTaskRequest = await req.json();
+
+    console.log("Sharing task:", { taskId, taskTitle, recipientEmail, senderName, senderEmail });
 
     // Send email via Resend
     const emailResponse = await resend.emails.send({
@@ -58,7 +71,7 @@ serve(async (req) => {
   } catch (error) {
     console.error("Error in share-task-notification function:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message, stack: error.stack }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },

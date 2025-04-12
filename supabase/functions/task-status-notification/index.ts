@@ -9,6 +9,12 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+// Get the Resend API key
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+if (!RESEND_API_KEY) {
+  console.error("RESEND_API_KEY is not set. Email functionality will not work!");
+}
+
 // Create a Supabase client
 const supabaseUrl = Deno.env.get("SUPABASE_URL") as string;
 const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
@@ -24,15 +30,17 @@ serve(async (req) => {
   }
 
   try {
-    const apiKey = Deno.env.get("RESEND_API_KEY");
-    if (!apiKey) {
-      throw new Error("RESEND_API_KEY is not set");
+    // Check if Resend API key is available
+    if (!RESEND_API_KEY) {
+      throw new Error("RESEND_API_KEY is not set. Please add it in the Supabase Edge Function configuration.");
     }
     
     // This function needs to be triggered by a webhook or database trigger
     // Parse the payload to get task information
     const payload = await req.json();
     const { record } = payload;
+    
+    console.log("Received task update:", record);
     
     // If the task doesn't have shared_with or it's not completed, skip
     if (!record || !record.shared_with || !record.shared_with.length || !record.completed) {
@@ -53,7 +61,7 @@ serve(async (req) => {
       throw new Error(`Failed to fetch user data: ${userError.message}`);
     }
     
-    const resend = new Resend(apiKey);
+    const resend = new Resend(RESEND_API_KEY);
     
     // Send email to each shared contact
     for (const recipientEmail of record.shared_with) {
@@ -82,7 +90,7 @@ serve(async (req) => {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     console.error(`Error: ${errorMessage}`);
     
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    return new Response(JSON.stringify({ error: errorMessage, stack: error.stack }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });
