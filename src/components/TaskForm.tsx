@@ -27,22 +27,22 @@ const TaskForm: React.FC<TaskFormProps> = ({ onAdd, autoFocus = false }) => {
   return (
     <form 
       onSubmit={handleSubmit} 
-      className="flex items-center gap-2 mb-6 bg-white rounded-lg border border-gray-200 p-1 pl-3 focus-within:ring-1 focus-within:ring-blue-200 focus-within:border-blue-300 transition-all"
+      className="flex items-center gap-2 mb-6 bg-gray-50 rounded-xl p-1 pl-4 transition-all"
     >
       <Input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         placeholder="Add a new task..."
-        className="border-none shadow-none focus-visible:ring-0 flex-1"
+        className="border-none bg-transparent shadow-none focus-visible:ring-0 flex-1 placeholder:text-gray-400"
         autoFocus={autoFocus}
       />
       <Button 
         type="submit" 
         disabled={!title.trim() || isSubmitting}
         size="sm"
-        className="shrink-0"
+        className="shrink-0 rounded-lg bg-black hover:bg-gray-800 text-white"
       >
-        <Plus className="h-5 w-5 mr-1" /> Add
+        <Plus className="h-5 w-5" />
       </Button>
     </form>
   );

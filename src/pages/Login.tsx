@@ -16,24 +16,24 @@ const Login: React.FC = () => {
   }, [currentUser, loading, navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-50 to-indigo-50 p-4">
-      <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8 space-y-8 text-center">
+    <div className="min-h-screen flex items-center justify-center bg-white p-4">
+      <div className="w-full max-w-sm space-y-10 text-center">
         <div className="space-y-2">
           <div className="flex justify-center">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-              <CalendarCheck className="h-10 w-10 text-todo-blue" />
+            <div className="w-16 h-16 rounded-full flex items-center justify-center bg-black">
+              <CalendarCheck className="h-8 w-8 text-white" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold">Daily Dash</h1>
-          <p className="text-gray-500">
-            Simple day-based task management to keep you productive
+          <h1 className="text-3xl font-bold text-gray-900 mt-6">Tasks</h1>
+          <p className="text-gray-500 text-sm">
+            Simple and elegant task management
           </p>
         </div>
         
         <div className="pt-4">
           <Button
             onClick={signInWithGoogle}
-            className="w-full flex items-center justify-center gap-2"
+            className="w-full flex items-center justify-center gap-3 bg-black hover:bg-gray-800 text-white rounded-xl py-6"
             disabled={loading}
           >
             <svg
@@ -47,8 +47,8 @@ const Login: React.FC = () => {
             Continue with Google
           </Button>
           
-          <div className="mt-4 text-sm text-gray-500">
-            <p>No account needed. Just sign in and start organizing your day!</p>
+          <div className="mt-4 text-xs text-gray-400">
+            <p>Your tasks will be synced across all your devices</p>
           </div>
         </div>
       </div>

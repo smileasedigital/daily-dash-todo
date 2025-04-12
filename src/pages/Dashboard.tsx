@@ -30,17 +30,17 @@ const Dashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="animate-pulse flex flex-col items-center">
-          <div className="rounded-md bg-gray-200 h-8 w-48 mb-4"></div>
-          <div className="rounded-md bg-gray-200 h-20 w-64"></div>
+          <div className="rounded-md bg-gray-100 h-8 w-48 mb-4"></div>
+          <div className="rounded-md bg-gray-100 h-20 w-64"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col">
       <Header />
       
       <main className="flex-1 flex flex-col max-w-2xl w-full mx-auto px-4 py-6">
