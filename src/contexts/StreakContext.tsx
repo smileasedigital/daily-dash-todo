@@ -4,16 +4,7 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
-
-// Streak interface
-export interface UserStreak {
-  id: string;
-  userId: string;
-  currentStreak: number;
-  longestStreak: number;
-  lastCompletedDate: string | null;
-  streakHistory: Array<{date: string; streak: number}>;
-}
+import { UserStreak } from '@/integrations/supabase/schema';
 
 interface StreakContextType {
   streak: UserStreak | null;
@@ -67,13 +58,16 @@ export const StreakProvider: React.FC<StreakProviderProps> = ({ children }) => {
 
           if (createError) throw createError;
           
+          // Map the returned data to our UserStreak interface
           const formattedStreak: UserStreak = {
             id: newData.id,
-            userId: newData.user_id,
-            currentStreak: newData.current_streak,
-            longestStreak: newData.longest_streak,
-            lastCompletedDate: newData.last_completed_date,
-            streakHistory: newData.streak_history || []
+            user_id: newData.user_id,
+            current_streak: newData.current_streak,
+            longest_streak: newData.longest_streak,
+            last_completed_date: newData.last_completed_date,
+            streak_history: newData.streak_history || [],
+            created_at: newData.created_at,
+            updated_at: newData.updated_at
           };
           
           setStreak(formattedStreak);
@@ -81,13 +75,16 @@ export const StreakProvider: React.FC<StreakProviderProps> = ({ children }) => {
           throw error;
         }
       } else if (data) {
+        // Map the returned data to our UserStreak interface
         const formattedStreak: UserStreak = {
           id: data.id,
-          userId: data.user_id,
-          currentStreak: data.current_streak,
-          longestStreak: data.longest_streak,
-          lastCompletedDate: data.last_completed_date,
-          streakHistory: data.streak_history || []
+          user_id: data.user_id,
+          current_streak: data.current_streak,
+          longest_streak: data.longest_streak,
+          last_completed_date: data.last_completed_date,
+          streak_history: data.streak_history || [],
+          created_at: data.created_at,
+          updated_at: data.updated_at
         };
         
         setStreak(formattedStreak);

@@ -1,11 +1,16 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "npm:resend@2.0.0";
+
+const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
 };
 
 interface ShareTaskRequest {
@@ -19,59 +24,45 @@ interface ShareTaskRequest {
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
-    return new Response(null, {
-      headers: corsHeaders,
-      status: 204,
-    });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const apiKey = Deno.env.get("RESEND_API_KEY");
-    if (!apiKey) {
-      throw new Error("RESEND_API_KEY is not set");
-    }
-
-    const resend = new Resend(apiKey);
-    
     const { taskId, taskTitle, recipientEmail, senderName, senderEmail }: ShareTaskRequest = await req.json();
 
-    // Validate inputs
-    if (!taskId || !taskTitle || !recipientEmail || !senderName || !senderEmail) {
-      throw new Error("Missing required fields");
-    }
-
-    const { data, error } = await resend.emails.send({
-      from: "Task Accountability <onboarding@resend.dev>",
-      to: recipientEmail,
-      subject: `${senderName} has shared a task with you for accountability`,
+    // Send email via Resend
+    const emailResponse = await resend.emails.send({
+      from: "Accountability <onboarding@resend.dev>",
+      to: [recipientEmail],
+      subject: `${senderName} would like your help with accountability`,
       html: `
-        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2>Task Accountability Request</h2>
-          <p>${senderName} (${senderEmail}) has asked you to help them stay accountable for a task:</p>
-          <div style="border-left: 4px solid #3b82f6; padding: 12px 16px; background-color: #f9fafb; margin: 24px 0;">
-            <h3 style="margin: 0; color: #1e3a8a;">${taskTitle}</h3>
-          </div>
-          <p>You'll receive updates when this task is completed or if it's missed.</p>
-          <p>Thank you for helping keep ${senderName} accountable!</p>
+        <h1>Accountability Request</h1>
+        <p>${senderName} has shared a task with you for accountability:</p>
+        <div style="padding: 15px; border-left: 4px solid #7C3AED; background-color: #F5F3FF; margin: 20px 0;">
+          <p style="margin: 0; font-weight: bold;">${taskTitle}</p>
         </div>
-      `
+        <p>They're counting on you to help them stay accountable! When they mark this task as complete (or if they miss it), you'll receive a notification.</p>
+        <p>Thank you for supporting ${senderName} on their journey to building better habits!</p>
+      `,
     });
 
-    if (error) {
-      throw new Error(`Failed to send email: ${error.message}`);
-    }
+    console.log("Email sent successfully:", emailResponse);
 
-    return new Response(JSON.stringify({ success: true, messageId: data?.id }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    return new Response(JSON.stringify(emailResponse), {
       status: 200,
+      headers: {
+        "Content-Type": "application/json",
+        ...corsHeaders,
+      },
     });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    console.error(`Error: ${errorMessage}`);
-    
-    return new Response(JSON.stringify({ error: errorMessage }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    console.error("Error in share-task-notification function:", error);
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      }
+    );
   }
 });
