@@ -2,13 +2,13 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTheme } from '@/contexts/ThemeContext'; // Import useTheme
+import { useTheme } from '@/contexts/ThemeContext'; 
 import { Button } from '@/components/ui/button';
-import { Sun, Moon } from 'lucide-react'; // Import sun and moon icons
+import { Sun, Moon } from 'lucide-react';
 
 const Header: React.FC = () => {
-  const { currentUser, logout } = useAuth();
-  const { theme, toggleTheme } = useTheme(); // Get theme state and toggle function
+  const { currentUser, signOut } = useAuth(); // Changed from logout to signOut
+  const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   const isOnDashboard = location.pathname === '/dashboard';
 
@@ -51,7 +51,7 @@ const Header: React.FC = () => {
               )}
               
               <Button 
-                onClick={logout}
+                onClick={signOut} // Changed from logout to signOut
                 variant="destructive"
               >
                 Logout
