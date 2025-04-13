@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -14,7 +13,7 @@ export interface Task extends ExtendedTask {
   date: string; // ISO date string
   createdAt: string;
   updatedAt: string;
-  user_id: string;
+  user_id: string; // Added this line to include user_id in the interface
   stakes?: string | null;
   sharedWith?: string[] | null;
   description?: string | null;
