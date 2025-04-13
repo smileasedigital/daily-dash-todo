@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,7 +9,8 @@ const Login: React.FC = () => {
   const { signInWithGoogle, currentUser, loading } = useAuth();
   const navigate = useNavigate();
 
-  React.useEffect(() => {
+  useEffect(() => {
+    // Only navigate if we have a user and we're not loading
     if (currentUser && !loading) {
       navigate('/dashboard');
     }

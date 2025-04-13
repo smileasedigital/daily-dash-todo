@@ -9,11 +9,14 @@ const Index: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Only redirect if we're not loading and we have a user
     if (!loading && currentUser) {
       navigate('/dashboard');
     }
   }, [currentUser, loading, navigate]);
 
+  // Render the login page if not authenticated
+  // No redirection here, just render the component
   return <Login />;
 };
 
