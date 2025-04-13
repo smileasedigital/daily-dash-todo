@@ -32,8 +32,9 @@ serve(async (req) => {
     // Get API key from environment variable
     const apiKey = Deno.env.get("RESEND_API_KEY");
     if (!apiKey) {
+      console.error("RESEND_API_KEY is not set");
       return new Response(
-        JSON.stringify({ error: "RESEND_API_KEY is not set in environment variables" }),
+        JSON.stringify({ error: "Email service configuration error" }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 500,
@@ -41,12 +42,14 @@ serve(async (req) => {
       );
     }
     
+    console.log("Initializing Resend with API key");
     // Initialize Resend with API key
     const resend = new Resend(apiKey);
     
+    console.log("Sending test email to:", email);
     // Send test email
     const { data, error } = await resend.emails.send({
-      from: "Task App <noreply@yourdomain.com>", // Update with your domain
+      from: "Task App <onboarding@resend.dev>", // Using Resend's default domain for testing
       to: email,
       subject: "Test Email from Task App",
       html: `
@@ -69,6 +72,7 @@ serve(async (req) => {
       );
     }
     
+    console.log("Test email sent successfully:", data);
     return new Response(
       JSON.stringify({ success: true, message: "Test email sent successfully", data }),
       {

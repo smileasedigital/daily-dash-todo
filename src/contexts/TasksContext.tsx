@@ -15,6 +15,8 @@ export interface Task extends ExtendedTask {
   updatedAt: string;
   stakes?: string | null;
   sharedWith?: string[] | null;
+  description?: string | null;
+  priority?: 'high' | 'medium' | 'low' | null;
 }
 
 interface TasksContextType {
@@ -22,7 +24,7 @@ interface TasksContextType {
   selectedDate: Date;
   setSelectedDate: (date: Date) => void;
   filteredTasks: Task[];
-  addTask: (title: string, stakes?: string) => void;
+  addTask: (title: string, stakes?: string, description?: string, priority?: 'high' | 'medium' | 'low', sharedWith?: string[]) => void;
   updateTask: (id: string, updates: Partial<Omit<Task, 'id'>>) => void;
   toggleTaskCompletion: (id: string) => void;
   deleteTask: (id: string) => void;
@@ -53,7 +55,6 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const { currentUser } = useAuth();
   
-  // Load tasks from Supabase when user is authenticated
   useEffect(() => {
     const fetchTasks = async () => {
       if (!currentUser) {
@@ -95,7 +96,6 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
 
     fetchTasks();
 
-    // Set up real-time subscription for tasks
     if (currentUser) {
       const channel = supabase
         .channel('public:tasks')
@@ -108,7 +108,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
           }, 
           (payload) => {
             console.log('Realtime update:', payload);
-            fetchTasks(); // Refresh tasks on any change
+            fetchTasks();
           }
         )
         .subscribe();
@@ -119,13 +119,11 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     }
   }, [currentUser]);
 
-  // Filter tasks based on selected date
   const filteredTasks = tasks.filter(
     (task) => task.date === format(selectedDate, 'yyyy-MM-dd')
   );
 
-  // Add a new task
-  const addTask = async (title: string, stakes?: string) => {
+  const addTask = async (title: string, stakes?: string, description?: string, priority?: 'high' | 'medium' | 'low', sharedWith?: string[]) => {
     if (!title.trim() || !currentUser) return;
     
     try {
@@ -135,11 +133,17 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
         title: title.trim(),
         completed: false,
         date: formattedDate,
-        user_id: currentUser.id
+        user_id: currentUser.id,
+        description: description?.trim() || null,
+        priority: priority || null
       } as any;
       
       if (stakes) {
         newTaskData.stakes = stakes.trim();
+      }
+      
+      if (sharedWith && sharedWith.length > 0) {
+        newTaskData.shared_with = sharedWith;
       }
       
       const { data, error } = await supabase
@@ -159,6 +163,8 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
         updatedAt: data.updated_at,
         stakes: data.stakes,
         sharedWith: data.shared_with,
+        description: data.description,
+        priority: data.priority,
         user_id: data.user_id
       };
       
@@ -170,18 +176,18 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     }
   };
 
-  // Update a task
   const updateTask = async (id: string, updates: Partial<Omit<Task, 'id'>>) => {
     if (!currentUser) return;
 
     try {
-      // Prepare updates for Supabase (convert camelCase to snake_case)
       const supabaseUpdates: any = {};
       if (updates.title !== undefined) supabaseUpdates.title = updates.title;
       if (updates.completed !== undefined) supabaseUpdates.completed = updates.completed;
       if (updates.date !== undefined) supabaseUpdates.date = updates.date;
       if (updates.stakes !== undefined) supabaseUpdates.stakes = updates.stakes;
       if (updates.sharedWith !== undefined) supabaseUpdates.shared_with = updates.sharedWith;
+      if (updates.description !== undefined) supabaseUpdates.description = updates.description;
+      if (updates.priority !== undefined) supabaseUpdates.priority = updates.priority;
       
       const { error } = await supabase
         .from('tasks')
@@ -199,11 +205,10 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
       );
     } catch (error) {
       console.error('Error updating task:', error);
-      throw error; // Re-throw to handle in the component
+      throw error;
     }
   };
 
-  // Toggle task completion
   const toggleTaskCompletion = async (id: string) => {
     if (!currentUser) return;
     
@@ -230,20 +235,16 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
         )
       );
 
-      // If the task was marked as completed, check if it was a staked task
       if (!taskToToggle.completed && taskToToggle.stakes) {
         toast.success('Staked task completed successfully!', {
           description: `You've met your commitment: "${taskToToggle.stakes}"`
         });
       }
       
-      // Handle streak update if a task is completed
       if (!taskToToggle.completed) {
         try {
-          // Update user streak when completing a task
           const today = format(new Date(), 'yyyy-MM-dd');
           
-          // Get current streak data
           const { data: streakData, error: streakError } = await supabase
             .from('user_streaks')
             .select('*')
@@ -259,33 +260,26 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
           let streakHistory = [];
           
           if (streakData) {
-            // Calculate new streak
             const lastCompletedDate = streakData.last_completed_date;
             const yesterday = format(new Date(new Date().setDate(new Date().getDate() - 1)), 'yyyy-MM-dd');
             
             if (lastCompletedDate === today) {
-              // Already completed a task today, no streak change
               currentStreak = streakData.current_streak;
             } else if (lastCompletedDate === yesterday) {
-              // Completed yesterday, increment streak
               currentStreak = streakData.current_streak + 1;
             } else if (lastCompletedDate && lastCompletedDate < yesterday) {
-              // Missed days, reset streak
               currentStreak = 1;
             }
             
             longestStreak = Math.max(currentStreak, streakData.longest_streak);
             
-            // Update streak history
             streakHistory = streakData.streak_history || [];
             streakHistory.push({ date: today, streak: currentStreak });
             
-            // Keep only last 30 entries
             if (streakHistory.length > 30) {
               streakHistory = streakHistory.slice(-30);
             }
             
-            // Update streak in database
             const { error: updateError } = await supabase
               .from('user_streaks')
               .update({
@@ -299,7 +293,6 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
               
             if (updateError) throw updateError;
           } else {
-            // First time, create new streak record
             streakHistory = [{ date: today, streak: 1 }];
             
             const { error: insertError } = await supabase
@@ -315,7 +308,6 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
             if (insertError) throw insertError;
           }
           
-          // If streak milestone achieved, show toast
           if (currentStreak === 7 || currentStreak === 30 || currentStreak === 100) {
             toast.success(`🔥 ${currentStreak} day streak achieved!`, {
               description: "Keep up the great work!"
@@ -323,11 +315,9 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
           }
         } catch (error) {
           console.error('Error updating streak:', error);
-          // Don't show this error to users
         }
       }
       
-      // If task is shared, notify people
       if (!taskToToggle.completed && taskToToggle.sharedWith?.length) {
         // This could be implemented for completed tasks notification
       }
@@ -337,7 +327,6 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     }
   };
 
-  // Delete a task
   const deleteTask = async (id: string) => {
     if (!currentUser) return;
     
@@ -357,7 +346,6 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     }
   };
 
-  // Add stakes to a task
   const addStakes = async (id: string, stakes: string) => {
     try {
       await updateTask(id, { stakes: stakes.trim() });
@@ -368,7 +356,6 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     }
   };
 
-  // Remove stakes from a task
   const removeStakes = async (id: string) => {
     try {
       await updateTask(id, { stakes: null });
@@ -378,8 +365,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
       throw error;
     }
   };
-  
-  // Share task with a friend for accountability
+
   const shareTask = async (id: string, email: string) => {
     if (!currentUser) return;
     
@@ -393,13 +379,10 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
         return;
       }
       
-      // Add email to sharedWith array
       const updatedSharedWith = [...sharedWith, email];
       
-      // Update the task first
       await updateTask(id, { sharedWith: updatedSharedWith });
       
-      // Trigger email notification using edge function
       const { error } = await supabase.functions.invoke('share-task-notification', {
         body: { 
           taskId: id, 
@@ -422,8 +405,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
       throw error;
     }
   };
-  
-  // Unshare task with a friend
+
   const unshareTask = async (id: string, email: string) => {
     if (!currentUser) return;
     

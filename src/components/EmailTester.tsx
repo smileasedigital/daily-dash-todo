@@ -31,11 +31,15 @@ const EmailTester: React.FC = () => {
 
     setIsLoading(true);
     try {
-      const { error } = await supabase.functions.invoke('test-email', {
+      console.log("Sending test email to:", testEmail);
+      const { data, error } = await supabase.functions.invoke('test-email', {
         body: { email: testEmail }
       });
 
+      console.log("Response:", data, error);
+
       if (error) {
+        console.error("Error from function:", error);
         throw error;
       }
 
@@ -47,7 +51,7 @@ const EmailTester: React.FC = () => {
       setTestEmail('');
     } catch (err) {
       console.error('Error sending test email:', err);
-      toast.error('Failed to send test email');
+      toast.error('Failed to send test email. Please check console for details.');
     } finally {
       setIsLoading(false);
     }
@@ -58,7 +62,7 @@ const EmailTester: React.FC = () => {
   }
 
   return (
-    <Card className="shadow-md mt-6">
+    <Card className="shadow-md">
       <CardHeader>
         <CardTitle className="text-lg">Test Email Configuration</CardTitle>
       </CardHeader>

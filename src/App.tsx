@@ -4,14 +4,12 @@ import { Toaster } from 'sonner';
 import { AuthProvider } from './contexts/AuthContext';
 import { TasksProvider } from './contexts/TasksContext';
 import { StreakProvider } from './contexts/StreakContext';
-import { ThemeProvider } from './contexts/ThemeContext'; // Add ThemeProvider import
+import { ThemeProvider } from './contexts/ThemeContext';
 
 import Index from './pages/Index';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import NotFound from './pages/NotFound';
-
-import './App.css';
 
 function App() {
   return (
