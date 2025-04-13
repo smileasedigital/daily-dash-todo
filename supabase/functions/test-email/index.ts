@@ -17,9 +17,11 @@ serve(async (req) => {
   }
   
   try {
+    console.log("Starting test-email function");
     const { email } = await req.json();
     
     if (!email) {
+      console.error("Missing email address");
       return new Response(
         JSON.stringify({ error: "Email address is required" }),
         {
@@ -34,7 +36,7 @@ serve(async (req) => {
     if (!apiKey) {
       console.error("RESEND_API_KEY is not set");
       return new Response(
-        JSON.stringify({ error: "Email service configuration error" }),
+        JSON.stringify({ error: "Email service configuration error - API key not set" }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 500,
@@ -42,7 +44,7 @@ serve(async (req) => {
       );
     }
     
-    console.log("Initializing Resend with API key");
+    console.log("Initializing Resend with API key:", apiKey.substring(0, 5) + "..." + apiKey.substring(apiKey.length - 5));
     // Initialize Resend with API key
     const resend = new Resend(apiKey);
     
@@ -57,6 +59,7 @@ serve(async (req) => {
           <h2>Email System Test</h2>
           <p>This is a test email to verify that the email notification system is working correctly.</p>
           <p>If you're receiving this, the Resend integration is working properly!</p>
+          <p>Current time: ${new Date().toISOString()}</p>
         </div>
       `,
     });

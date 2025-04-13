@@ -18,9 +18,11 @@ serve(async (req) => {
   }
   
   try {
+    console.log("Starting share-task-notification function");
     const { taskId, taskTitle, recipientEmail, senderName, senderEmail } = await req.json();
     
     if (!taskId || !taskTitle || !recipientEmail || !senderName) {
+      console.error("Missing required parameters:", { taskId, taskTitle, recipientEmail, senderName });
       return new Response(
         JSON.stringify({ error: "Missing required parameters" }),
         {
@@ -31,11 +33,25 @@ serve(async (req) => {
     }
     
     // Initialize Resend with API key from environment variable
-    const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+    const apiKey = Deno.env.get("RESEND_API_KEY");
+    if (!apiKey) {
+      console.error("RESEND_API_KEY is not set in environment variables");
+      return new Response(
+        JSON.stringify({ error: "Email service configuration error - API key not set" }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500,
+        }
+      );
+    }
     
+    console.log("Initializing Resend with API key");
+    const resend = new Resend(apiKey);
+    
+    console.log("Sending notification email to:", recipientEmail, "about task:", taskTitle);
     // Send email using Resend
     const { data, error } = await resend.emails.send({
-      from: "Task Accountability <noreply@yourdomain.com>", // Update with your domain
+      from: "Task App <onboarding@resend.dev>", // Using Resend's default domain for testing
       to: recipientEmail,
       subject: `${senderName} wants your help staying accountable`,
       html: `
@@ -55,7 +71,7 @@ serve(async (req) => {
     if (error) {
       console.error("Error sending email:", error);
       return new Response(
-        JSON.stringify({ error: "Failed to send email" }),
+        JSON.stringify({ error: "Failed to send email", details: error }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 500,
@@ -63,6 +79,7 @@ serve(async (req) => {
       );
     }
     
+    console.log("Email sent successfully:", data);
     return new Response(
       JSON.stringify({ success: true, message: "Email sent successfully", data }),
       {

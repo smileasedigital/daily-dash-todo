@@ -384,7 +384,8 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
       
       await updateTask(id, { sharedWith: updatedSharedWith });
       
-      const { error } = await supabase.functions.invoke('share-task-notification', {
+      console.log("Invoking share-task-notification for:", email);
+      const { data, error } = await supabase.functions.invoke('share-task-notification', {
         body: { 
           taskId: id, 
           taskTitle: task.title,
@@ -396,8 +397,9 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
       
       if (error) {
         console.error('Error invoking edge function:', error);
-        toast.error('Failed to send notification email');
+        toast.error('Failed to send notification email. Please check your Resend API key.');
       } else {
+        console.log("Share notification result:", data);
         toast.success(`Task shared with ${email}`);
       }
     } catch (error) {

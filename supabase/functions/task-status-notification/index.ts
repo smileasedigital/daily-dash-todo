@@ -9,17 +9,6 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-// Get the Resend API key
-const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-if (!RESEND_API_KEY) {
-  console.error("RESEND_API_KEY is not set. Email functionality will not work!");
-}
-
-// Create a Supabase client
-const supabaseUrl = Deno.env.get("SUPABASE_URL") as string;
-const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
-const supabase = createClient(supabaseUrl, supabaseKey);
-
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -30,8 +19,11 @@ serve(async (req) => {
   }
 
   try {
+    console.log("Starting task-status-notification function");
     // Check if Resend API key is available
+    const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     if (!RESEND_API_KEY) {
+      console.error("RESEND_API_KEY is not set in environment variables");
       throw new Error("RESEND_API_KEY is not set. Please add it in the Supabase Edge Function configuration.");
     }
     
@@ -50,6 +42,17 @@ serve(async (req) => {
       });
     }
     
+    // Create a Supabase client
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    
+    if (!supabaseUrl || !supabaseKey) {
+      console.error("Missing Supabase credentials");
+      throw new Error("Missing Supabase credentials. Please check environment variables.");
+    }
+    
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
     // Get task owner information
     const { data: userData, error: userError } = await supabase
       .from('profiles')
@@ -58,14 +61,18 @@ serve(async (req) => {
       .single();
     
     if (userError) {
+      console.error("Failed to fetch user data:", userError);
       throw new Error(`Failed to fetch user data: ${userError.message}`);
     }
     
+    console.log("Initializing Resend with API key");
     const resend = new Resend(RESEND_API_KEY);
     
+    console.log("Sending completion emails to:", record.shared_with);
     // Send email to each shared contact
     for (const recipientEmail of record.shared_with) {
-      await resend.emails.send({
+      console.log("Sending email to:", recipientEmail);
+      const { data, error } = await resend.emails.send({
         from: "Task Accountability <onboarding@resend.dev>",
         to: recipientEmail,
         subject: `${userData.name || userData.email} has completed a task`,
@@ -80,6 +87,12 @@ serve(async (req) => {
           </div>
         `
       });
+      
+      if (error) {
+        console.error("Error sending email to", recipientEmail, ":", error);
+      } else {
+        console.log("Email sent successfully to", recipientEmail, ":", data);
+      }
     }
 
     return new Response(JSON.stringify({ success: true }), {
