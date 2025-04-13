@@ -14,21 +14,21 @@ import NotFound from './pages/NotFound';
 function App() {
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <TasksProvider>
-          <StreakProvider>
-            <Router>
+      <Router>
+        <AuthProvider>
+          <TasksProvider>
+            <StreakProvider>
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
-            </Router>
-            <Toaster position="top-right" />
-          </StreakProvider>
-        </TasksProvider>
-      </AuthProvider>
+              <Toaster position="top-right" />
+            </StreakProvider>
+          </TasksProvider>
+        </AuthProvider>
+      </Router>
     </ThemeProvider>
   );
 }
