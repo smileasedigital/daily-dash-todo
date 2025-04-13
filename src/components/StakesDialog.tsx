@@ -1,10 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useTasks, Task } from '@/contexts/TasksContext';
 import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 
 interface StakesDialogProps {
   isOpen: boolean;
@@ -16,6 +17,13 @@ const StakesDialog: React.FC<StakesDialogProps> = ({ isOpen, onClose, task }) =>
   const [stakes, setStakes] = useState(task.stakes || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { addStakes, removeStakes } = useTasks();
+
+  // Update stakes when task changes or dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      setStakes(task.stakes || '');
+    }
+  }, [isOpen, task.stakes]);
 
   const handleSave = async () => {
     setIsSubmitting(true);
@@ -30,7 +38,7 @@ const StakesDialog: React.FC<StakesDialogProps> = ({ isOpen, onClose, task }) =>
       onClose();
     } catch (error) {
       console.error('Error saving stakes:', error);
-      toast.error('Failed to save stakes');
+      toast.error('Failed to save stakes. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -56,10 +64,16 @@ const StakesDialog: React.FC<StakesDialogProps> = ({ isOpen, onClose, task }) =>
             />
           </div>
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={onClose} className="dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600">
+            <Button 
+              variant="outline" 
+              onClick={onClose} 
+              className="dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+              disabled={isSubmitting}
+            >
               Cancel
             </Button>
             <Button onClick={handleSave} disabled={isSubmitting}>
+              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
               Save Stakes
             </Button>
           </div>

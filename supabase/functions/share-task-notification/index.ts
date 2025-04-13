@@ -1,80 +1,82 @@
 
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { Resend } from "npm:resend@2.0.0";
-
-// Access the Resend API key from environment variables
-const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-if (!RESEND_API_KEY) {
-  console.error("RESEND_API_KEY is not set. Email functionality will not work!");
-}
-
-const resend = new Resend(RESEND_API_KEY);
-const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.23.0";
+import { Resend } from "https://esm.sh/resend@0.16.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
-interface ShareTaskRequest {
-  taskId: string;
-  taskTitle: string;
-  recipientEmail: string;
-  senderName: string;
-  senderEmail: string;
-}
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, {
+      headers: corsHeaders,
+      status: 204,
+    });
   }
-
+  
   try {
-    // Check if Resend API key is available
-    if (!RESEND_API_KEY) {
-      throw new Error("RESEND_API_KEY is not set. Please add it in the Supabase Edge Function configuration.");
+    const { taskId, taskTitle, recipientEmail, senderName, senderEmail } = await req.json();
+    
+    if (!taskId || !taskTitle || !recipientEmail || !senderName) {
+      return new Response(
+        JSON.stringify({ error: "Missing required parameters" }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400,
+        }
+      );
     }
-
-    const { taskId, taskTitle, recipientEmail, senderName, senderEmail }: ShareTaskRequest = await req.json();
-
-    console.log("Sharing task:", { taskId, taskTitle, recipientEmail, senderName, senderEmail });
-
-    // Send email via Resend
-    const emailResponse = await resend.emails.send({
-      from: "Accountability <onboarding@resend.dev>",
-      to: [recipientEmail],
-      subject: `${senderName} would like your help with accountability`,
+    
+    // Initialize Resend with API key from environment variable
+    const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+    
+    // Send email using Resend
+    const { data, error } = await resend.emails.send({
+      from: "Task Accountability <noreply@yourdomain.com>", // Update with your domain
+      to: recipientEmail,
+      subject: `${senderName} wants your help staying accountable`,
       html: `
-        <h1>Accountability Request</h1>
-        <p>${senderName} has shared a task with you for accountability:</p>
-        <div style="padding: 15px; border-left: 4px solid #7C3AED; background-color: #F5F3FF; margin: 20px 0;">
-          <p style="margin: 0; font-weight: bold;">${taskTitle}</p>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2>Help ${senderName} stay accountable</h2>
+          <p>${senderName} has shared a task with you for accountability:</p>
+          <div style="background-color: #f7f7f7; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <strong>Task:</strong> ${taskTitle}
+          </div>
+          <p>They've asked for your support in making sure they complete this task.</p>
+          <p>You'll receive updates when they complete it!</p>
+          <p>Reply directly to ${senderEmail} if you have any questions.</p>
         </div>
-        <p>They're counting on you to help them stay accountable! When they mark this task as complete (or if they miss it), you'll receive a notification.</p>
-        <p>Thank you for supporting ${senderName} on their journey to building better habits!</p>
       `,
     });
-
-    console.log("Email sent successfully:", emailResponse);
-
-    return new Response(JSON.stringify(emailResponse), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json",
-        ...corsHeaders,
-      },
-    });
-  } catch (error) {
-    console.error("Error in share-task-notification function:", error);
+    
+    if (error) {
+      console.error("Error sending email:", error);
+      return new Response(
+        JSON.stringify({ error: "Failed to send email" }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500,
+        }
+      );
+    }
+    
     return new Response(
-      JSON.stringify({ error: error.message, stack: error.stack }),
+      JSON.stringify({ success: true, message: "Email sent successfully", data }),
       {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      }
+    );
+  } catch (error) {
+    console.error("Error in share-task-notification:", error);
+    return new Response(
+      JSON.stringify({ error: error.message || "Internal server error" }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
       }
     );
   }

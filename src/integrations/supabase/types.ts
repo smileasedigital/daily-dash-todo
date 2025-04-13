@@ -42,6 +42,8 @@ export type Database = {
           created_at: string
           date: string
           id: string
+          shared_with: string[] | null
+          stakes: string | null
           title: string
           updated_at: string
           user_id: string
@@ -51,6 +53,8 @@ export type Database = {
           created_at?: string
           date: string
           id?: string
+          shared_with?: string[] | null
+          stakes?: string | null
           title: string
           updated_at?: string
           user_id: string
@@ -60,7 +64,42 @@ export type Database = {
           created_at?: string
           date?: string
           id?: string
+          shared_with?: string[] | null
+          stakes?: string | null
           title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_streaks: {
+        Row: {
+          created_at: string
+          current_streak: number
+          id: string
+          last_completed_date: string | null
+          longest_streak: number
+          streak_history: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_streak?: number
+          id?: string
+          last_completed_date?: string | null
+          longest_streak?: number
+          streak_history?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_streak?: number
+          id?: string
+          last_completed_date?: string | null
+          longest_streak?: number
+          streak_history?: Json | null
           updated_at?: string
           user_id?: string
         }

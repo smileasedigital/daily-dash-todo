@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -81,7 +80,8 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
           createdAt: task.created_at,
           updatedAt: task.updated_at,
           stakes: task.stakes,
-          sharedWith: task.shared_with
+          sharedWith: task.shared_with,
+          user_id: task.user_id
         }));
 
         setTasks(formattedTasks);
@@ -131,12 +131,12 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     try {
       const formattedDate = format(selectedDate, 'yyyy-MM-dd');
       
-      const newTaskData: any = { 
+      const newTaskData = { 
         title: title.trim(),
         completed: false,
         date: formattedDate,
         user_id: currentUser.id
-      };
+      } as any;
       
       if (stakes) {
         newTaskData.stakes = stakes.trim();
@@ -158,7 +158,8 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
         createdAt: data.created_at,
         updatedAt: data.updated_at,
         stakes: data.stakes,
-        sharedWith: data.shared_with
+        sharedWith: data.shared_with,
+        user_id: data.user_id
       };
       
       setTasks((prevTasks) => [newTask, ...prevTasks]);
@@ -185,8 +186,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
       const { error } = await supabase
         .from('tasks')
         .update(supabaseUpdates)
-        .eq('id', id)
-        .eq('user_id', currentUser.id);
+        .eq('id', id);
       
       if (error) throw error;
       
@@ -197,10 +197,9 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
             : task
         )
       );
-      toast.success('Task updated');
     } catch (error) {
       console.error('Error updating task:', error);
-      toast.error('Failed to update task');
+      throw error; // Re-throw to handle in the component
     }
   };
 
@@ -215,8 +214,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
       const { error } = await supabase
         .from('tasks')
         .update({ completed: !taskToToggle.completed })
-        .eq('id', id)
-        .eq('user_id', currentUser.id);
+        .eq('id', id);
       
       if (error) throw error;
       
@@ -238,6 +236,101 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
           description: `You've met your commitment: "${taskToToggle.stakes}"`
         });
       }
+      
+      // Handle streak update if a task is completed
+      if (!taskToToggle.completed) {
+        try {
+          // Update user streak when completing a task
+          const today = format(new Date(), 'yyyy-MM-dd');
+          
+          // Get current streak data
+          const { data: streakData, error: streakError } = await supabase
+            .from('user_streaks')
+            .select('*')
+            .eq('user_id', currentUser.id)
+            .single();
+            
+          if (streakError && streakError.code !== 'PGRST116') {
+            throw streakError;
+          }
+          
+          let currentStreak = 1;
+          let longestStreak = 1;
+          let streakHistory = [];
+          
+          if (streakData) {
+            // Calculate new streak
+            const lastCompletedDate = streakData.last_completed_date;
+            const yesterday = format(new Date(new Date().setDate(new Date().getDate() - 1)), 'yyyy-MM-dd');
+            
+            if (lastCompletedDate === today) {
+              // Already completed a task today, no streak change
+              currentStreak = streakData.current_streak;
+            } else if (lastCompletedDate === yesterday) {
+              // Completed yesterday, increment streak
+              currentStreak = streakData.current_streak + 1;
+            } else if (lastCompletedDate && lastCompletedDate < yesterday) {
+              // Missed days, reset streak
+              currentStreak = 1;
+            }
+            
+            longestStreak = Math.max(currentStreak, streakData.longest_streak);
+            
+            // Update streak history
+            streakHistory = streakData.streak_history || [];
+            streakHistory.push({ date: today, streak: currentStreak });
+            
+            // Keep only last 30 entries
+            if (streakHistory.length > 30) {
+              streakHistory = streakHistory.slice(-30);
+            }
+            
+            // Update streak in database
+            const { error: updateError } = await supabase
+              .from('user_streaks')
+              .update({
+                current_streak: currentStreak,
+                longest_streak: longestStreak,
+                last_completed_date: today,
+                streak_history: streakHistory,
+                updated_at: new Date().toISOString()
+              })
+              .eq('user_id', currentUser.id);
+              
+            if (updateError) throw updateError;
+          } else {
+            // First time, create new streak record
+            streakHistory = [{ date: today, streak: 1 }];
+            
+            const { error: insertError } = await supabase
+              .from('user_streaks')
+              .insert([{
+                user_id: currentUser.id,
+                current_streak: 1,
+                longest_streak: 1,
+                last_completed_date: today,
+                streak_history: streakHistory
+              }]);
+              
+            if (insertError) throw insertError;
+          }
+          
+          // If streak milestone achieved, show toast
+          if (currentStreak === 7 || currentStreak === 30 || currentStreak === 100) {
+            toast.success(`🔥 ${currentStreak} day streak achieved!`, {
+              description: "Keep up the great work!"
+            });
+          }
+        } catch (error) {
+          console.error('Error updating streak:', error);
+          // Don't show this error to users
+        }
+      }
+      
+      // If task is shared, notify people
+      if (!taskToToggle.completed && taskToToggle.sharedWith?.length) {
+        // This could be implemented for completed tasks notification
+      }
     } catch (error) {
       console.error('Error toggling task completion:', error);
       toast.error('Failed to update task');
@@ -252,8 +345,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
       const { error } = await supabase
         .from('tasks')
         .delete()
-        .eq('id', id)
-        .eq('user_id', currentUser.id);
+        .eq('id', id);
       
       if (error) throw error;
       
@@ -267,12 +359,24 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
 
   // Add stakes to a task
   const addStakes = async (id: string, stakes: string) => {
-    return updateTask(id, { stakes: stakes.trim() });
+    try {
+      await updateTask(id, { stakes: stakes.trim() });
+      return true;
+    } catch (error) {
+      console.error("Error adding stakes:", error);
+      throw error;
+    }
   };
 
   // Remove stakes from a task
   const removeStakes = async (id: string) => {
-    return updateTask(id, { stakes: null });
+    try {
+      await updateTask(id, { stakes: null });
+      return true;
+    } catch (error) {
+      console.error("Error removing stakes:", error);
+      throw error;
+    }
   };
   
   // Share task with a friend for accountability
@@ -292,6 +396,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
       // Add email to sharedWith array
       const updatedSharedWith = [...sharedWith, email];
       
+      // Update the task first
       await updateTask(id, { sharedWith: updatedSharedWith });
       
       // Trigger email notification using edge function
@@ -305,9 +410,12 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
         }
       });
       
-      if (error) throw error;
-      
-      toast.success(`Task shared with ${email}`);
+      if (error) {
+        console.error('Error invoking edge function:', error);
+        toast.error('Failed to send notification email');
+      } else {
+        toast.success(`Task shared with ${email}`);
+      }
     } catch (error) {
       console.error('Error sharing task:', error);
       toast.error('Failed to share task');

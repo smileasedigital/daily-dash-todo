@@ -3,8 +3,9 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { X } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 import { useTasks, Task } from '@/contexts/TasksContext';
+import { toast } from 'sonner';
 
 interface ShareTaskDialogProps {
   isOpen: boolean;
@@ -17,8 +18,21 @@ const ShareTaskDialog: React.FC<ShareTaskDialogProps> = ({ isOpen, onClose, task
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { shareTask, unshareTask } = useTasks();
 
+  const validateEmail = (email: string): boolean => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+  };
+
   const handleShare = async () => {
-    if (!email.trim()) return;
+    if (!email.trim()) {
+      toast.error('Please enter an email address');
+      return;
+    }
+
+    if (!validateEmail(email)) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
     
     try {
       setIsSubmitting(true);
@@ -26,6 +40,7 @@ const ShareTaskDialog: React.FC<ShareTaskDialogProps> = ({ isOpen, onClose, task
       setEmail('');
     } catch (error) {
       console.error('Error sharing task:', error);
+      toast.error('Failed to share task. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -37,6 +52,7 @@ const ShareTaskDialog: React.FC<ShareTaskDialogProps> = ({ isOpen, onClose, task
       await unshareTask(task.id, emailToRemove);
     } catch (error) {
       console.error('Error unsharing task:', error);
+      toast.error('Failed to remove shared user. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -44,13 +60,13 @@ const ShareTaskDialog: React.FC<ShareTaskDialogProps> = ({ isOpen, onClose, task
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent className="dark:bg-gray-800 dark:text-white dark:border-gray-700">
         <DialogHeader>
           <DialogTitle>Share for Accountability</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div>
-            <p className="text-sm text-muted-foreground mb-2">
+            <p className="text-sm text-muted-foreground mb-2 dark:text-gray-300">
               Share this task with someone who can help keep you accountable.
               They'll be notified when you create and complete the task.
             </p>
@@ -62,8 +78,13 @@ const ShareTaskDialog: React.FC<ShareTaskDialogProps> = ({ isOpen, onClose, task
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isSubmitting}
+                className="dark:bg-gray-700 dark:text-white dark:border-gray-600"
               />
-              <Button onClick={handleShare} disabled={!email.trim() || isSubmitting}>
+              <Button 
+                onClick={handleShare} 
+                disabled={!email.trim() || isSubmitting}
+              >
+                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
                 Share
               </Button>
             </div>
@@ -74,7 +95,7 @@ const ShareTaskDialog: React.FC<ShareTaskDialogProps> = ({ isOpen, onClose, task
               <h4 className="text-sm font-medium mb-2">Shared with:</h4>
               <div className="space-y-2">
                 {task.sharedWith.map((sharedEmail) => (
-                  <div key={sharedEmail} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md">
+                  <div key={sharedEmail} className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 px-3 py-2 rounded-md">
                     <span className="text-sm">{sharedEmail}</span>
                     <Button
                       variant="ghost"
