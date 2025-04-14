@@ -52,7 +52,7 @@ const EmailTester: React.FC = () => {
       setTestEmail('');
     } catch (err) {
       console.error('Error sending test email:', err);
-      toast.error('Failed to send test email. Check if RESEND_API_KEY is set in Supabase.');
+      toast.error('Failed to send test email. Check if Mailgun API keys are set in Supabase.');
     } finally {
       setIsLoading(false);
     }
@@ -67,14 +67,14 @@ const EmailTester: React.FC = () => {
       <CardHeader>
         <CardTitle className="text-lg">Test Email Configuration</CardTitle>
         <CardDescription>
-          Test your Resend email integration
+          Test your Mailgun email integration
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Alert className="mb-4 bg-blue-50 dark:bg-blue-900/20">
           <Info className="h-4 w-4" />
           <AlertDescription>
-            Make sure you've added the RESEND_API_KEY to your Supabase Edge Functions settings.
+            Make sure you've added the MAILGUN_API_KEY and MAILGUN_DOMAIN to your Supabase Edge Functions settings.
           </AlertDescription>
         </Alert>
         <p className="text-sm text-muted-foreground mb-4">
@@ -103,15 +103,15 @@ const EmailTester: React.FC = () => {
       </CardContent>
       <CardFooter className="flex justify-between items-center">
         <p className="text-xs text-muted-foreground">
-          Powered by Resend
+          Powered by Mailgun
         </p>
         <a 
-          href="https://resend.com/docs" 
+          href="https://documentation.mailgun.com/en/latest/"
           target="_blank" 
           rel="noopener noreferrer"
           className="text-xs text-blue-500 hover:underline"
         >
-          Resend Documentation
+          Mailgun Documentation
         </a>
       </CardFooter>
     </Card>

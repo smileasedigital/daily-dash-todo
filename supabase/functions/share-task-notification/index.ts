@@ -1,7 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.23.0";
-import { Resend } from "https://esm.sh/resend@0.16.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -32,12 +31,14 @@ serve(async (req) => {
       );
     }
     
-    // Initialize Resend with API key from environment variable
-    const apiKey = Deno.env.get("RESEND_API_KEY");
-    if (!apiKey) {
-      console.error("RESEND_API_KEY is not set in environment variables");
+    // Initialize Mailgun with API key from environment variable
+    const MAILGUN_API_KEY = Deno.env.get("MAILGUN_API_KEY");
+    const MAILGUN_DOMAIN = Deno.env.get("MAILGUN_DOMAIN");
+    
+    if (!MAILGUN_API_KEY || !MAILGUN_DOMAIN) {
+      console.error("Mailgun configuration is missing in environment variables");
       return new Response(
-        JSON.stringify({ error: "Email service configuration error - API key not set" }),
+        JSON.stringify({ error: "Email service configuration error - API keys not set" }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 500,
@@ -45,16 +46,15 @@ serve(async (req) => {
       );
     }
     
-    console.log("Initializing Resend with API key");
-    const resend = new Resend(apiKey);
-    
     console.log("Sending notification email to:", recipientEmail, "about task:", taskTitle);
-    // Send email using Resend
-    const { data, error } = await resend.emails.send({
-      from: "Task App <onboarding@resend.dev>", // Using Resend's default domain for testing
-      to: recipientEmail,
-      subject: `${senderName} wants your help staying accountable`,
-      html: `
+    
+    // Send email using Mailgun API
+    try {
+      const formData = new FormData();
+      formData.append('from', `Task App <mailgun@${MAILGUN_DOMAIN}>`);
+      formData.append('to', recipientEmail);
+      formData.append('subject', `${senderName} wants your help staying accountable`);
+      formData.append('html', `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2>Help ${senderName} stay accountable</h2>
           <p>${senderName} has shared a task with you for accountability:</p>
@@ -65,13 +65,36 @@ serve(async (req) => {
           <p>You'll receive updates when they complete it!</p>
           <p>Reply directly to ${senderEmail} if you have any questions.</p>
         </div>
-      `,
-    });
-    
-    if (error) {
+      `);
+      
+      const response = await fetch(`https://api.mailgun.net/v3/${MAILGUN_DOMAIN}/messages`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${btoa(`api:${MAILGUN_API_KEY}`)}`,
+        },
+        body: formData
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Mailgun API error: ${response.status} ${errorText}`);
+      }
+      
+      const data = await response.json();
+      console.log("Email sent successfully:", data);
+      
+      return new Response(
+        JSON.stringify({ success: true, message: "Email sent successfully", data }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        }
+      );
+      
+    } catch (error) {
       console.error("Error sending email:", error);
       return new Response(
-        JSON.stringify({ error: "Failed to send email", details: error }),
+        JSON.stringify({ error: "Failed to send email", details: error.message }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 500,
@@ -79,14 +102,6 @@ serve(async (req) => {
       );
     }
     
-    console.log("Email sent successfully:", data);
-    return new Response(
-      JSON.stringify({ success: true, message: "Email sent successfully", data }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      }
-    );
   } catch (error) {
     console.error("Error in share-task-notification:", error);
     return new Response(

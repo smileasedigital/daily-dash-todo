@@ -1,6 +1,5 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "npm:resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -20,11 +19,13 @@ serve(async (req) => {
 
   try {
     console.log("Starting task-status-notification function");
-    // Check if Resend API key is available
-    const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-    if (!RESEND_API_KEY) {
-      console.error("RESEND_API_KEY is not set in environment variables");
-      throw new Error("RESEND_API_KEY is not set. Please add it in the Supabase Edge Function configuration.");
+    // Check if Mailgun API key is available
+    const MAILGUN_API_KEY = Deno.env.get("MAILGUN_API_KEY");
+    const MAILGUN_DOMAIN = Deno.env.get("MAILGUN_DOMAIN");
+    
+    if (!MAILGUN_API_KEY || !MAILGUN_DOMAIN) {
+      console.error("Mailgun configuration is not set in environment variables");
+      throw new Error("Mailgun configuration is missing. Please add MAILGUN_API_KEY and MAILGUN_DOMAIN in the Supabase Edge Function configuration.");
     }
     
     // This function needs to be triggered by a webhook or database trigger
@@ -65,18 +66,17 @@ serve(async (req) => {
       throw new Error(`Failed to fetch user data: ${userError.message}`);
     }
     
-    console.log("Initializing Resend with API key");
-    const resend = new Resend(RESEND_API_KEY);
-    
-    console.log("Sending completion emails to:", record.shared_with);
-    // Send email to each shared contact
+    console.log("Sending completion emails using Mailgun to:", record.shared_with);
+    // Send email to each shared contact using Mailgun
     for (const recipientEmail of record.shared_with) {
-      console.log("Sending email to:", recipientEmail);
-      const { data, error } = await resend.emails.send({
-        from: "Task Accountability <onboarding@resend.dev>",
-        to: recipientEmail,
-        subject: `${userData.name || userData.email} has completed a task`,
-        html: `
+      try {
+        console.log("Sending email to:", recipientEmail);
+        
+        const formData = new FormData();
+        formData.append('from', `Task Accountability <mailgun@${MAILGUN_DOMAIN}>`);
+        formData.append('to', recipientEmail);
+        formData.append('subject', `${userData.name || userData.email} has completed a task`);
+        formData.append('html', `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
             <h2>Task Completed!</h2>
             <p>Good news! ${userData.name || userData.email} has successfully completed a task you were keeping them accountable for:</p>
@@ -85,13 +85,26 @@ serve(async (req) => {
             </div>
             <p>Thank you for helping keep them accountable!</p>
           </div>
-        `
-      });
-      
-      if (error) {
+        `);
+        
+        const response = await fetch(`https://api.mailgun.net/v3/${MAILGUN_DOMAIN}/messages`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Basic ${btoa(`api:${MAILGUN_API_KEY}`)}`,
+          },
+          body: formData
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Mailgun API error: ${response.status} ${errorText}`);
+        }
+        
+        const result = await response.json();
+        console.log("Email sent successfully to", recipientEmail, ":", result);
+        
+      } catch (error) {
         console.error("Error sending email to", recipientEmail, ":", error);
-      } else {
-        console.log("Email sent successfully to", recipientEmail, ":", data);
       }
     }
 
