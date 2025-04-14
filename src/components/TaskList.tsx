@@ -21,10 +21,10 @@ const TaskList: React.FC<TaskListProps> = ({
 }) => {
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 text-gray-400">
+      <div className="flex flex-col items-center justify-center p-8 text-muted-foreground">
         <div className="animate-pulse flex flex-col items-center">
-          <div className="rounded-md bg-gray-200 h-8 w-48 mb-4"></div>
-          <div className="rounded-md bg-gray-200 h-20 w-64"></div>
+          <div className="rounded-md bg-secondary h-8 w-48 mb-4"></div>
+          <div className="rounded-md bg-secondary h-20 w-64"></div>
         </div>
       </div>
     );
@@ -32,7 +32,7 @@ const TaskList: React.FC<TaskListProps> = ({
 
   if (tasks.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 text-gray-400">
+      <div className="flex flex-col items-center justify-center p-8 text-muted-foreground">
         <ClipboardList className="h-12 w-12 mb-2 opacity-20" />
         <p className="text-center">No tasks for this day</p>
         <p className="text-center text-sm">Add a task to get started</p>
@@ -44,6 +44,11 @@ const TaskList: React.FC<TaskListProps> = ({
     // Sort by completion status (incomplete first)
     if (a.completed !== b.completed) {
       return a.completed ? 1 : -1;
+    }
+    // Then sort by priority if present
+    if (a.priority && b.priority && a.priority !== b.priority) {
+      const priorityOrder = { high: 0, medium: 1, low: 2 };
+      return priorityOrder[a.priority] - priorityOrder[b.priority];
     }
     // Then sort by creation date (newest first)
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();

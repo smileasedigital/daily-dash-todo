@@ -9,4 +9,24 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<ExtendedDatabase>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+// Enable realtime subscriptions on the client
+export const supabase = createClient<ExtendedDatabase>(
+  SUPABASE_URL, 
+  SUPABASE_PUBLISHABLE_KEY,
+  {
+    realtime: {
+      params: {
+        eventsPerSecond: 10
+      }
+    }
+  }
+);
+
+// Enable realtime for tasks table
+supabase.channel('public:tasks')
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, 
+    payload => {
+      console.log('Realtime change:', payload);
+    }
+  )
+  .subscribe();

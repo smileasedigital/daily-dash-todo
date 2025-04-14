@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -56,9 +57,15 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const { currentUser } = useAuth();
   
+  // Debug log to check currentUser
+  useEffect(() => {
+    console.log('Current user in TasksContext:', currentUser);
+  }, [currentUser]);
+  
   useEffect(() => {
     const fetchTasks = async () => {
       if (!currentUser) {
+        console.log('No current user, clearing tasks');
         setTasks([]);
         setIsLoading(false);
         return;
@@ -66,13 +73,26 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
 
       setIsLoading(true);
       try {
+        console.log('Fetching tasks for user:', currentUser.id);
         const { data, error } = await supabase
           .from('tasks')
           .select('*')
           .eq('user_id', currentUser.id)
           .order('created_at', { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Supabase error:', error);
+          throw error;
+        }
+
+        console.log('Tasks fetched:', data);
+        
+        if (!data) {
+          console.warn('No data returned from tasks query');
+          setTasks([]);
+          setIsLoading(false);
+          return;
+        }
 
         const formattedTasks: Task[] = data.map(task => ({
           id: task.id,
@@ -83,9 +103,12 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
           updatedAt: task.updated_at,
           stakes: task.stakes,
           sharedWith: task.shared_with,
+          description: task.description,
+          priority: task.priority,
           user_id: task.user_id
         }));
 
+        console.log('Formatted tasks:', formattedTasks);
         setTasks(formattedTasks);
       } catch (error) {
         console.error('Error fetching tasks:', error);
@@ -98,6 +121,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     fetchTasks();
 
     if (currentUser) {
+      // Subscribe to real-time updates
       const channel = supabase
         .channel('public:tasks')
         .on('postgres_changes', 
@@ -108,26 +132,44 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
             filter: `user_id=eq.${currentUser.id}`
           }, 
           (payload) => {
-            console.log('Realtime update:', payload);
-            fetchTasks();
+            console.log('Realtime update received:', payload);
+            fetchTasks(); // Refetch tasks when changes occur
           }
         )
-        .subscribe();
+        .subscribe((status) => {
+          console.log('Realtime subscription status:', status);
+        });
 
       return () => {
+        console.log('Cleaning up realtime subscription');
         supabase.removeChannel(channel);
       };
     }
   }, [currentUser]);
 
+  // Filter tasks based on selected date
   const filteredTasks = tasks.filter(
-    (task) => task.date === format(selectedDate, 'yyyy-MM-dd')
+    (task) => {
+      const matches = task.date === format(selectedDate, 'yyyy-MM-dd');
+      return matches;
+    }
   );
 
+  // Enhanced debug logging for filtered tasks
+  useEffect(() => {
+    console.log('Selected date:', format(selectedDate, 'yyyy-MM-dd'));
+    console.log('All tasks:', tasks);
+    console.log('Filtered tasks:', filteredTasks);
+  }, [selectedDate, tasks, filteredTasks]);
+
   const addTask = async (title: string, stakes?: string, description?: string, priority?: 'high' | 'medium' | 'low', sharedWith?: string[]) => {
-    if (!title.trim() || !currentUser) return;
+    if (!title.trim() || !currentUser) {
+      console.warn('Cannot add task: missing title or user');
+      return;
+    }
     
     try {
+      console.log('Adding task for user:', currentUser.id);
       const formattedDate = format(selectedDate, 'yyyy-MM-dd');
       
       const newTaskData = { 
@@ -147,13 +189,19 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
         newTaskData.shared_with = sharedWith;
       }
       
+      console.log('Creating new task with data:', newTaskData);
       const { data, error } = await supabase
         .from('tasks')
         .insert([newTaskData])
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error inserting task:', error);
+        throw error;
+      }
+      
+      console.log('Task created successfully:', data);
       
       const newTask: Task = {
         id: data.id,

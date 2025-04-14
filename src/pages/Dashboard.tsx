@@ -16,7 +16,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Flame, Award, AlertTriangle, Share2, Mail } from 'lucide-react';
+import { Flame, Award, AlertTriangle, Share2, Mail, CheckCircle, Calendar } from 'lucide-react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/AppSidebar';
 
@@ -69,18 +69,23 @@ const Dashboard: React.FC = () => {
 
   if (loading || tasksLoading || streakLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-pulse flex flex-col items-center">
-          <div className="rounded-md bg-gray-100 dark:bg-gray-800 h-8 w-48 mb-4"></div>
-          <div className="rounded-md bg-gray-100 dark:bg-gray-800 h-20 w-64"></div>
+          <div className="rounded-md bg-secondary h-8 w-48 mb-4"></div>
+          <div className="rounded-md bg-secondary h-20 w-64"></div>
         </div>
       </div>
     );
   }
 
+  // Calculate completion rate
+  const completionRate = taskSummary.total > 0 
+    ? Math.round((taskSummary.completed / taskSummary.total) * 100) 
+    : 0;
+
   return (
     <SidebarProvider>
-      <div className="min-h-screen bg-white dark:bg-gray-900 flex">
+      <div className="min-h-screen bg-background flex">
         <AppSidebar />
         
         <main className="flex-1 p-6 ml-0">
@@ -88,7 +93,7 @@ const Dashboard: React.FC = () => {
             <div className="grid grid-cols-1 gap-6 mb-6">
               <div className="flex flex-col space-y-4">
                 <div className="flex items-center justify-between">
-                  <h1 className="text-2xl font-bold">Your Tasks</h1>
+                  <h1 className="text-2xl font-medium tracking-tight">Your Tasks</h1>
                 </div>
                 <DateSelector 
                   selectedDate={selectedDate}
@@ -99,8 +104,53 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
             
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium flex items-center">
+                    <Calendar className="h-4 w-4 mr-2 text-primary" />
+                    Today's Tasks
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-medium">{filteredTasks.length}</div>
+                  <p className="text-sm text-muted-foreground">
+                    {filteredTasks.filter(t => t.completed).length} completed
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium flex items-center">
+                    <Flame className="h-4 w-4 mr-2 text-orange-500" />
+                    Current Streak
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-medium">{streak?.current_streak || 0}</div>
+                  <p className="text-sm text-muted-foreground">consecutive days</p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium flex items-center">
+                    <CheckCircle className="h-4 w-4 mr-2 text-todo-green" />
+                    Completion Rate
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-medium">{completionRate}%</div>
+                  <p className="text-sm text-muted-foreground">
+                    {taskSummary.completed} of {taskSummary.total} tasks
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+            
             <Tabs defaultValue="today" className="w-full">
-              <TabsList className="grid grid-cols-4 mb-4">
+              <TabsList className="grid grid-cols-4 mb-6">
                 <TabsTrigger value="today">Today's Tasks</TabsTrigger>
                 <TabsTrigger value="streaks">Streaks</TabsTrigger>
                 <TabsTrigger value="stakes">Stakes</TabsTrigger>
@@ -119,7 +169,7 @@ const Dashboard: React.FC = () => {
               
               <TabsContent value="streaks">
                 <div className="grid md:grid-cols-3 gap-6">
-                  <Card className="dark:bg-gray-800 dark:text-white dark:border-gray-700">
+                  <Card>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-lg flex items-center">
                         <Flame className="h-5 w-5 mr-2 text-orange-500" />
@@ -127,12 +177,12 @@ const Dashboard: React.FC = () => {
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="pt-4">
-                      <div className="text-4xl font-bold">{streak?.current_streak || 0}</div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">consecutive days</p>
+                      <div className="text-4xl font-medium">{streak?.current_streak || 0}</div>
+                      <p className="text-sm text-muted-foreground mt-1">consecutive days</p>
                     </CardContent>
                   </Card>
                   
-                  <Card className="dark:bg-gray-800 dark:text-white dark:border-gray-700">
+                  <Card>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-lg flex items-center">
                         <Award className="h-5 w-5 mr-2 text-amber-500" />
@@ -140,20 +190,20 @@ const Dashboard: React.FC = () => {
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="pt-4">
-                      <div className="text-4xl font-bold">{streak?.longest_streak || 0}</div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">days achieved</p>
+                      <div className="text-4xl font-medium">{streak?.longest_streak || 0}</div>
+                      <p className="text-sm text-muted-foreground mt-1">days achieved</p>
                     </CardContent>
                   </Card>
                   
-                  <Card className="dark:bg-gray-800 dark:text-white dark:border-gray-700">
+                  <Card>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-lg flex items-center">
                         Task Completion
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="pt-4">
-                      <div className="text-4xl font-bold">{taskSummary.completed}</div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">of {taskSummary.total} tasks completed</p>
+                      <div className="text-4xl font-medium">{taskSummary.completed}</div>
+                      <p className="text-sm text-muted-foreground mt-1">of {taskSummary.total} tasks completed</p>
                     </CardContent>
                   </Card>
                 </div>
@@ -164,7 +214,7 @@ const Dashboard: React.FC = () => {
               
               <TabsContent value="stakes">
                 <div className="mb-6">
-                  <h3 className="text-lg font-medium mb-4 flex items-center dark:text-white">
+                  <h3 className="text-lg font-medium mb-4 flex items-center">
                     <AlertTriangle className="h-5 w-5 mr-2 text-amber-500" />
                     Tasks with Stakes
                   </h3>
@@ -180,7 +230,7 @@ const Dashboard: React.FC = () => {
               
               <TabsContent value="settings">
                 <div className="mb-6">
-                  <h3 className="text-lg font-medium mb-4 flex items-center dark:text-white">
+                  <h3 className="text-lg font-medium mb-4 flex items-center">
                     <Mail className="h-5 w-5 mr-2 text-blue-500" />
                     Email Notification Settings
                   </h3>
