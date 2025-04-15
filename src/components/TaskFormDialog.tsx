@@ -51,6 +51,7 @@ const TaskFormDialog: React.FC = () => {
     
     setIsSubmitting(true);
     try {
+      // Pass the actual date instead of using the date state directly
       await addTask(title.trim(), stakes, description, priority, sharedWith.length > 0 ? sharedWith : undefined);
       resetForm();
       setOpen(false);

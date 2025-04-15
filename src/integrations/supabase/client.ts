@@ -27,16 +27,24 @@ export const supabase = createClient<ExtendedDatabase>(
   }
 );
 
-// Enable realtime for tasks table with better error handling
+// Enable realtime for tasks table with better error handling and debugging
 try {
   const channel = supabase.channel('public:tasks')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, 
+    .on('postgres_changes', 
+      { 
+        event: '*', 
+        schema: 'public', 
+        table: 'tasks' 
+      }, 
       payload => {
-        console.log('Realtime change:', payload);
+        console.log('Realtime change received:', payload);
       }
     )
-    .subscribe((status) => {
+    .subscribe((status, error) => {
       console.log('Realtime subscription status:', status);
+      if (error) {
+        console.error('Realtime subscription error:', error);
+      }
     });
     
   console.log('Realtime subscription initialized for tasks table');

@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -26,7 +25,7 @@ interface TasksContextType {
   selectedDate: Date;
   setSelectedDate: (date: Date) => void;
   filteredTasks: Task[];
-  addTask: (title: string, stakes?: string, description?: string, priority?: 'high' | 'medium' | 'low', sharedWith?: string[]) => void;
+  addTask: (title: string, stakes?: string, description?: string, priority?: 'high' | 'medium' | 'low', sharedWith?: string[]) => Promise<void>;
   updateTask: (id: string, updates: Partial<Omit<Task, 'id'>>) => void;
   toggleTaskCompletion: (id: string) => void;
   deleteTask: (id: string) => void;
@@ -172,22 +171,16 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
       console.log('Adding task for user:', currentUser.id);
       const formattedDate = format(selectedDate, 'yyyy-MM-dd');
       
-      const newTaskData = { 
+      const newTaskData = {
         title: title.trim(),
         completed: false,
         date: formattedDate,
         user_id: currentUser.id,
         description: description?.trim() || null,
-        priority: priority || null
-      } as any;
-      
-      if (stakes) {
-        newTaskData.stakes = stakes.trim();
-      }
-      
-      if (sharedWith && sharedWith.length > 0) {
-        newTaskData.shared_with = sharedWith;
-      }
+        priority: priority || null,
+        stakes: stakes?.trim() || null,
+        shared_with: sharedWith?.length ? sharedWith : null
+      };
       
       console.log('Creating new task with data:', newTaskData);
       const { data, error } = await supabase
@@ -222,6 +215,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     } catch (error) {
       console.error('Error adding task:', error);
       toast.error('Failed to add task');
+      throw error;
     }
   };
 
