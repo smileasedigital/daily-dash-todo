@@ -12,7 +12,7 @@ export const fetchTasks = async (userId: string): Promise<Task[]> => {
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Supabase error:', error);
+    console.error('Supabase error fetching tasks:', error);
     throw error;
   }
 
@@ -55,8 +55,8 @@ export const createTask = async (
     .single();
   
   if (error) {
-    console.error('Error inserting task:', error);
-    throw error;
+    console.error('Error inserting task in Supabase:', error);
+    throw new Error(`Failed to create task: ${error.message}`);
   }
   
   if (!data) {
@@ -69,30 +69,40 @@ export const createTask = async (
 };
 
 export const updateTaskInDB = async (id: string, updates: any): Promise<void> => {
+  console.log(`Updating task ${id} with:`, updates);
+  
   const { error } = await supabase
     .from('tasks')
     .update(updates)
     .eq('id', id);
   
   if (error) {
-    console.error('Error updating task:', error);
-    throw error;
+    console.error('Error updating task in Supabase:', error);
+    throw new Error(`Failed to update task: ${error.message}`);
   }
+  
+  console.log(`Task ${id} updated successfully`);
 };
 
 export const deleteTaskFromDB = async (id: string): Promise<void> => {
+  console.log(`Deleting task ${id}`);
+  
   const { error } = await supabase
     .from('tasks')
     .delete()
     .eq('id', id);
   
   if (error) {
-    console.error('Error deleting task:', error);
-    throw error;
+    console.error('Error deleting task from Supabase:', error);
+    throw new Error(`Failed to delete task: ${error.message}`);
   }
+  
+  console.log(`Task ${id} deleted successfully`);
 };
 
 export const setupRealtimeSubscription = (userId: string, onUpdate: () => void) => {
+  console.log(`Setting up realtime subscription for user ${userId}`);
+  
   const channel = supabase
     .channel('public:tasks')
     .on('postgres_changes', 

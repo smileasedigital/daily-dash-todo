@@ -6,9 +6,6 @@ import { ExtendedDatabase } from './schema';
 const SUPABASE_URL = "https://fqevwmrcgkaraeevivoj.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZxZXZ3bXJjZ2thcmFlZXZpdm9qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ0NDY2MjksImV4cCI6MjA2MDAyMjYyOX0.1ryABkZ7I6nnZ8V1mlQVuka2aEPnSYErcT4jycq6f_I";
 
-// Import the supabase client like this:
-// import { supabase } from "@/integrations/supabase/client";
-
 // Create the Supabase client with proper configuration
 export const supabase = createClient<ExtendedDatabase>(
   SUPABASE_URL, 

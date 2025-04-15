@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -5,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { Plus, Calendar as CalendarIcon, Users, AlertTriangle } from 'lucide-react';
-import { useTasks } from '@/contexts/TasksContext';
+import { useTasksContext } from '@/contexts/TasksContext';
 import {
   Dialog,
   DialogContent,
@@ -40,7 +41,7 @@ const TaskFormDialog: React.FC = () => {
   const [date, setDate] = useState<Date>(new Date());
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { addTask, selectedDate } = useTasks();
+  const { addTask, selectedDate } = useTasksContext();
 
   const handleSubmit = async () => {
     if (!title.trim()) {

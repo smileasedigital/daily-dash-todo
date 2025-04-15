@@ -37,7 +37,9 @@ export const useTasks = () => {
 
       setIsLoading(true);
       try {
+        console.log('Fetching tasks for user ID:', currentUser.id);
         const taskData = await fetchTasks(currentUser.id);
+        console.log('Tasks fetched successfully:', taskData);
         setTasks(taskData);
       } catch (error) {
         console.error('Error fetching tasks:', error);
@@ -73,16 +75,22 @@ export const useTasks = () => {
   }, [selectedDate, tasks, filteredTasks]);
 
   const addTask = async (title: string, stakes?: string, description?: string, priority?: 'high' | 'medium' | 'low', sharedWith?: string[], taskDate?: string) => {
-    if (!title.trim() || !currentUser) {
-      console.warn('Cannot add task: missing title or user', { title, currentUser });
-      return;
+    if (!title.trim()) {
+      console.warn('Cannot add task: missing title');
+      throw new Error('Task title is required');
+    }
+    
+    if (!currentUser) {
+      console.warn('Cannot add task: no current user');
+      throw new Error('You must be logged in to add tasks');
     }
     
     try {
       // Use the passed taskDate or default to the selectedDate
       const formattedDate = taskDate || formatDateForTask(selectedDate);
       
-      console.log('Using date for task:', formattedDate);
+      console.log(`Adding task: "${title}" for date: ${formattedDate}`);
+      console.log('User ID:', currentUser.id);
       
       const newTask = await createTask(
         currentUser.id,
@@ -95,9 +103,10 @@ export const useTasks = () => {
       );
       
       setTasks(prevTasks => [newTask, ...prevTasks]);
-      toast.success('Task added');
+      toast.success('Task added successfully');
+      return newTask;
     } catch (error) {
-      console.error('Error adding task:', error);
+      console.error('Error in addTask function:', error);
       toast.error('Failed to add task');
       throw error;
     }

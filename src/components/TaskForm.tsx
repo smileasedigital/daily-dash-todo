@@ -3,27 +3,33 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus } from 'lucide-react';
+import { useTasksContext } from '@/contexts/TasksContext';
+import { formatDateForTask } from '@/utils/taskUtils';
+import { toast } from 'sonner';
 
 interface TaskFormProps {
-  onAdd: (title: string) => void;
   autoFocus?: boolean;
 }
 
-const TaskForm: React.FC<TaskFormProps> = ({ onAdd, autoFocus = false }) => {
+const TaskForm: React.FC<TaskFormProps> = ({ autoFocus = false }) => {
   const [title, setTitle] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { addTask, selectedDate } = useTasksContext();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!title.trim()) return;
     
     setIsSubmitting(true);
     try {
-      onAdd(title.trim());
+      const formattedDate = formatDateForTask(selectedDate);
+      await addTask(title.trim(), undefined, undefined, undefined, undefined, formattedDate);
       setTitle('');
+      toast.success('Task added');
     } catch (error) {
       console.error('Error adding task:', error);
+      toast.error('Failed to add task');
     } finally {
       setIsSubmitting(false);
     }

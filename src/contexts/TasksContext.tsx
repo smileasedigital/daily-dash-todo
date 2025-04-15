@@ -1,16 +1,16 @@
 
 import React, { createContext, useContext, ReactNode } from 'react';
-import { useTasks } from '@/hooks/useTasks';
-import { TasksContextType, Task } from '@/types/task.types';
+import { Task, TasksContextType } from '@/types/task.types';
+import { useTasks as useTasksHook } from '@/hooks/useTasks';
 
 // Create the context
 const TasksContext = createContext<TasksContextType | undefined>(undefined);
 
 // Export the consumer hook
-export const useTasks = () => {
+export const useTasksContext = () => {
   const context = useContext(TasksContext);
   if (context === undefined) {
-    throw new Error('useTasks must be used within a TasksProvider');
+    throw new Error('useTasksContext must be used within a TasksProvider');
   }
   return context;
 };
@@ -25,7 +25,7 @@ interface TasksProviderProps {
 
 export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
   // Use our custom hook to get all the task functionality
-  const tasksData = useTasks();
+  const tasksData = useTasksHook();
   
   return (
     <TasksContext.Provider value={tasksData}>

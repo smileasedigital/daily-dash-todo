@@ -1,24 +1,21 @@
 
 import React from 'react';
-import { Task } from '@/contexts/TasksContext';
+import { Task } from '@/types/task.types';
 import TaskItem from './TaskItem';
 import { ClipboardList } from 'lucide-react';
+import { useTasksContext } from '@/contexts/TasksContext';
 
 interface TaskListProps {
   tasks: Task[];
-  onToggle: (id: string) => void;
-  onUpdate: (id: string, updates: Partial<Omit<Task, 'id'>>) => void;
-  onDelete: (id: string) => void;
   isLoading: boolean;
 }
 
 const TaskList: React.FC<TaskListProps> = ({
   tasks,
-  onToggle,
-  onUpdate,
-  onDelete,
   isLoading,
 }) => {
+  const { toggleTaskCompletion, updateTask, deleteTask } = useTasksContext();
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center p-8 text-muted-foreground">
@@ -60,9 +57,9 @@ const TaskList: React.FC<TaskListProps> = ({
         <div key={task.id} className="group">
           <TaskItem
             task={task}
-            onToggle={onToggle}
-            onUpdate={onUpdate}
-            onDelete={onDelete}
+            onToggle={toggleTaskCompletion}
+            onUpdate={updateTask}
+            onDelete={deleteTask}
           />
         </div>
       ))}
