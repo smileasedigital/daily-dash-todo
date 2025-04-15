@@ -41,7 +41,7 @@ const TaskFormDialog: React.FC = () => {
   const [date, setDate] = useState<Date>(new Date());
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { addTask } = useTasks();
+  const { addTask, selectedDate } = useTasks();
 
   const handleSubmit = async () => {
     if (!title.trim()) {
@@ -51,8 +51,16 @@ const TaskFormDialog: React.FC = () => {
     
     setIsSubmitting(true);
     try {
-      // Pass the actual date instead of using the date state directly
-      await addTask(title.trim(), stakes, description, priority, sharedWith.length > 0 ? sharedWith : undefined);
+      // Pass the formatted date string along with the task data
+      const formattedDate = format(date, 'yyyy-MM-dd');
+      await addTask(
+        title.trim(), 
+        stakes, 
+        description, 
+        priority, 
+        sharedWith.length > 0 ? sharedWith : undefined,
+        formattedDate
+      );
       resetForm();
       setOpen(false);
       toast.success('Task created successfully');

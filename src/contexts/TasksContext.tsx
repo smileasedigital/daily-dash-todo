@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -25,7 +26,7 @@ interface TasksContextType {
   selectedDate: Date;
   setSelectedDate: (date: Date) => void;
   filteredTasks: Task[];
-  addTask: (title: string, stakes?: string, description?: string, priority?: 'high' | 'medium' | 'low', sharedWith?: string[]) => Promise<void>;
+  addTask: (title: string, stakes?: string, description?: string, priority?: 'high' | 'medium' | 'low', sharedWith?: string[], taskDate?: string) => Promise<void>;
   updateTask: (id: string, updates: Partial<Omit<Task, 'id'>>) => void;
   toggleTaskCompletion: (id: string) => void;
   deleteTask: (id: string) => void;
@@ -161,7 +162,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     console.log('Filtered tasks:', filteredTasks);
   }, [selectedDate, tasks, filteredTasks]);
 
-  const addTask = async (title: string, stakes?: string, description?: string, priority?: 'high' | 'medium' | 'low', sharedWith?: string[]) => {
+  const addTask = async (title: string, stakes?: string, description?: string, priority?: 'high' | 'medium' | 'low', sharedWith?: string[], taskDate?: string) => {
     if (!title.trim() || !currentUser) {
       console.warn('Cannot add task: missing title or user');
       return;
@@ -169,7 +170,10 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     
     try {
       console.log('Adding task for user:', currentUser.id);
-      const formattedDate = format(selectedDate, 'yyyy-MM-dd');
+      // Use the passed taskDate or default to the selectedDate
+      const formattedDate = taskDate || format(selectedDate, 'yyyy-MM-dd');
+      
+      console.log('Using date for task:', formattedDate);
       
       const newTaskData = {
         title: title.trim(),
