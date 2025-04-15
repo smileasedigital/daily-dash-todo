@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -119,7 +118,7 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
     };
 
     fetchTasks();
-
+    
     if (currentUser) {
       // Subscribe to real-time updates
       const channel = supabase
@@ -164,12 +163,13 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
 
   const addTask = async (title: string, stakes?: string, description?: string, priority?: 'high' | 'medium' | 'low', sharedWith?: string[], taskDate?: string) => {
     if (!title.trim() || !currentUser) {
-      console.warn('Cannot add task: missing title or user');
+      console.warn('Cannot add task: missing title or user', { title, currentUser });
       return;
     }
     
     try {
       console.log('Adding task for user:', currentUser.id);
+      
       // Use the passed taskDate or default to the selectedDate
       const formattedDate = taskDate || format(selectedDate, 'yyyy-MM-dd');
       
@@ -187,10 +187,11 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
       };
       
       console.log('Creating new task with data:', newTaskData);
+      
       const { data, error } = await supabase
         .from('tasks')
         .insert([newTaskData])
-        .select()
+        .select('*')
         .single();
       
       if (error) {
@@ -200,22 +201,29 @@ export const TasksProvider: React.FC<TasksProviderProps> = ({ children }) => {
       
       console.log('Task created successfully:', data);
       
-      const newTask: Task = {
-        id: data.id,
-        title: data.title,
-        completed: data.completed,
-        date: data.date,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
-        stakes: data.stakes,
-        sharedWith: data.shared_with,
-        description: data.description,
-        priority: data.priority,
-        user_id: data.user_id
-      };
-      
-      setTasks((prevTasks) => [newTask, ...prevTasks]);
-      toast.success('Task added');
+      // Use the returned data from Supabase
+      if (data) {
+        const newTask: Task = {
+          id: data.id,
+          title: data.title,
+          completed: data.completed,
+          date: data.date,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+          stakes: data.stakes,
+          sharedWith: data.shared_with,
+          description: data.description,
+          priority: data.priority,
+          user_id: data.user_id
+        };
+        
+        setTasks((prevTasks) => [newTask, ...prevTasks]);
+        toast.success('Task added');
+      } else {
+        // If for some reason we don't get data back
+        console.error('No data returned from task insert');
+        toast.error('Failed to add task: No data returned');
+      }
     } catch (error) {
       console.error('Error adding task:', error);
       toast.error('Failed to add task');

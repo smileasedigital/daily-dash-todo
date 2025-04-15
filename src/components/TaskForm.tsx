@@ -19,9 +19,14 @@ const TaskForm: React.FC<TaskFormProps> = ({ onAdd, autoFocus = false }) => {
     if (!title.trim()) return;
     
     setIsSubmitting(true);
-    onAdd(title.trim());
-    setTitle('');
-    setIsSubmitting(false);
+    try {
+      onAdd(title.trim());
+      setTitle('');
+    } catch (error) {
+      console.error('Error adding task:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

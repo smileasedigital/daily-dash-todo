@@ -23,9 +23,23 @@ export const supabase = createClient<ExtendedDatabase>(
       params: {
         eventsPerSecond: 10
       }
+    },
+    // Adding debug to help identify issues
+    global: {
+      headers: {
+        'X-Client-Info': 'lovable-react-app'
+      }
     }
   }
 );
+
+// Set up error handling for Supabase
+supabase.auth.onAuthStateChange((event, session) => {
+  console.log('Auth state changed:', event);
+  if (session?.user) {
+    console.log('User authenticated:', session.user.id);
+  }
+});
 
 // Enable realtime for tasks table with better error handling and debugging
 try {

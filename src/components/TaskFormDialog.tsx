@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -51,7 +50,15 @@ const TaskFormDialog: React.FC = () => {
     
     setIsSubmitting(true);
     try {
-      // Pass the formatted date string along with the task data
+      console.log('Submitting task:', {
+        title: title.trim(),
+        stakes,
+        description,
+        priority,
+        sharedWith: sharedWith.length > 0 ? sharedWith : undefined,
+        date: format(date, 'yyyy-MM-dd')
+      });
+      
       const formattedDate = format(date, 'yyyy-MM-dd');
       await addTask(
         title.trim(), 
