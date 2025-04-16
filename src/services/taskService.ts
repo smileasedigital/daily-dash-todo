@@ -4,26 +4,32 @@ import { Task } from '@/types/task.types';
 import { mapSupabaseDataToTask } from '@/utils/taskUtils';
 
 export const fetchTasks = async (userId: string): Promise<Task[]> => {
-  console.log('Fetching tasks for user:', userId);
-  const { data, error } = await supabase
-    .from('tasks')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    console.error('Supabase error fetching tasks:', error);
-    throw error;
-  }
-
-  console.log('Tasks fetched:', data);
+  console.log('TaskService: Fetching tasks for user:', userId);
   
-  if (!data) {
-    console.warn('No data returned from tasks query');
-    return [];
-  }
+  try {
+    const { data, error } = await supabase
+      .from('tasks')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
 
-  return data.map(mapSupabaseDataToTask);
+    if (error) {
+      console.error('Supabase error fetching tasks:', error);
+      throw new Error(`Failed to fetch tasks: ${error.message}`);
+    }
+
+    console.log(`TaskService: ${data?.length || 0} tasks fetched successfully`);
+    
+    if (!data) {
+      console.warn('TaskService: No data returned from tasks query');
+      return [];
+    }
+
+    return data.map(mapSupabaseDataToTask);
+  } catch (e) {
+    console.error('Exception in fetchTasks:', e);
+    throw e;
+  }
 };
 
 export const createTask = async (
@@ -35,6 +41,11 @@ export const createTask = async (
   stakes?: string, 
   sharedWith?: string[]
 ): Promise<Task> => {
+  if (!userId) {
+    console.error('TaskService: Attempted to create task with no userId');
+    throw new Error('User ID is required to create a task');
+  }
+  
   const newTaskData = {
     title: title.trim(),
     completed: false,
@@ -46,80 +57,101 @@ export const createTask = async (
     shared_with: sharedWith?.length ? sharedWith : null
   };
   
-  console.log('Creating new task with data:', newTaskData);
+  console.log('TaskService: Creating new task with data:', newTaskData);
   
-  const { data, error } = await supabase
-    .from('tasks')
-    .insert([newTaskData])
-    .select('*')
-    .single();
-  
-  if (error) {
-    console.error('Error inserting task in Supabase:', error);
-    throw new Error(`Failed to create task: ${error.message}`);
+  try {
+    const { data, error } = await supabase
+      .from('tasks')
+      .insert([newTaskData])
+      .select('*')
+      .single();
+    
+    if (error) {
+      console.error('Error inserting task in Supabase:', error);
+      throw new Error(`Failed to create task: ${error.message}`);
+    }
+    
+    if (!data) {
+      console.error('No data returned from task insert');
+      throw new Error('No data returned from task creation');
+    }
+    
+    console.log('TaskService: Task created successfully:', data);
+    return mapSupabaseDataToTask(data);
+  } catch (e) {
+    console.error('Exception in createTask:', e);
+    throw e;
   }
-  
-  if (!data) {
-    console.error('No data returned from task insert');
-    throw new Error('No data returned from task creation');
-  }
-  
-  console.log('Task created successfully:', data);
-  return mapSupabaseDataToTask(data);
 };
 
 export const updateTaskInDB = async (id: string, updates: any): Promise<void> => {
-  console.log(`Updating task ${id} with:`, updates);
+  console.log(`TaskService: Updating task ${id} with:`, updates);
   
-  const { error } = await supabase
-    .from('tasks')
-    .update(updates)
-    .eq('id', id);
-  
-  if (error) {
-    console.error('Error updating task in Supabase:', error);
-    throw new Error(`Failed to update task: ${error.message}`);
+  try {
+    const { error } = await supabase
+      .from('tasks')
+      .update(updates)
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Error updating task in Supabase:', error);
+      throw new Error(`Failed to update task: ${error.message}`);
+    }
+    
+    console.log(`TaskService: Task ${id} updated successfully`);
+  } catch (e) {
+    console.error('Exception in updateTaskInDB:', e);
+    throw e;
   }
-  
-  console.log(`Task ${id} updated successfully`);
 };
 
 export const deleteTaskFromDB = async (id: string): Promise<void> => {
-  console.log(`Deleting task ${id}`);
+  console.log(`TaskService: Deleting task ${id}`);
   
-  const { error } = await supabase
-    .from('tasks')
-    .delete()
-    .eq('id', id);
-  
-  if (error) {
-    console.error('Error deleting task from Supabase:', error);
-    throw new Error(`Failed to delete task: ${error.message}`);
+  try {
+    const { error } = await supabase
+      .from('tasks')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Error deleting task from Supabase:', error);
+      throw new Error(`Failed to delete task: ${error.message}`);
+    }
+    
+    console.log(`TaskService: Task ${id} deleted successfully`);
+  } catch (e) {
+    console.error('Exception in deleteTaskFromDB:', e);
+    throw e;
   }
-  
-  console.log(`Task ${id} deleted successfully`);
 };
 
 export const setupRealtimeSubscription = (userId: string, onUpdate: () => void) => {
-  console.log(`Setting up realtime subscription for user ${userId}`);
+  console.log(`TaskService: Setting up realtime subscription for user ${userId}`);
   
-  const channel = supabase
-    .channel('public:tasks')
-    .on('postgres_changes', 
-      { 
-        event: '*', 
-        schema: 'public', 
-        table: 'tasks',
-        filter: `user_id=eq.${userId}`
-      }, 
-      (payload) => {
-        console.log('Realtime update received:', payload);
-        onUpdate(); // Trigger refetch of tasks
-      }
-    )
-    .subscribe((status) => {
-      console.log('Realtime subscription status:', status);
-    });
+  try {
+    const channel = supabase
+      .channel('public:tasks')
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'tasks',
+          filter: `user_id=eq.${userId}`
+        }, 
+        (payload) => {
+          console.log('TaskService: Realtime update received:', payload);
+          onUpdate(); // Trigger refetch of tasks
+        }
+      )
+      .subscribe((status) => {
+        console.log('TaskService: Realtime subscription status:', status);
+      });
 
-  return channel;
+    return channel;
+  } catch (e) {
+    console.error('Exception in setupRealtimeSubscription:', e);
+    console.log('TaskService: Failed to set up realtime subscription, falling back to polling');
+    return null;
+  }
 };

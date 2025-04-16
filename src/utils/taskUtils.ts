@@ -6,6 +6,8 @@ import { Task } from '@/types/task.types';
 
 // Convert Supabase task data to our Task type
 export const mapSupabaseDataToTask = (data: any): Task => {
+  console.log('Mapping data to task:', data);
+  
   return {
     id: data.id,
     title: data.title,
@@ -30,6 +32,7 @@ export const formatDateForTask = (date: Date): string => {
 export const updateUserStreak = async (userId: string) => {
   try {
     const today = format(new Date(), 'yyyy-MM-dd');
+    console.log(`Updating streak for user ${userId} on date ${today}`);
     
     const { data: streakData, error: streakError } = await supabase
       .from('user_streaks')
@@ -38,6 +41,7 @@ export const updateUserStreak = async (userId: string) => {
       .single();
       
     if (streakError && streakError.code !== 'PGRST116') {
+      console.error('Error fetching user streak:', streakError);
       throw streakError;
     }
     
@@ -46,15 +50,19 @@ export const updateUserStreak = async (userId: string) => {
     let streakHistory = [];
     
     if (streakData) {
+      console.log('Found existing streak data:', streakData);
       const lastCompletedDate = streakData.last_completed_date;
       const yesterday = format(new Date(new Date().setDate(new Date().getDate() - 1)), 'yyyy-MM-dd');
       
       if (lastCompletedDate === today) {
         currentStreak = streakData.current_streak;
+        console.log(`Already completed task today, maintaining streak at ${currentStreak}`);
       } else if (lastCompletedDate === yesterday) {
         currentStreak = streakData.current_streak + 1;
+        console.log(`Completed task day after yesterday, increasing streak to ${currentStreak}`);
       } else if (lastCompletedDate && lastCompletedDate < yesterday) {
         currentStreak = 1;
+        console.log('Streak broken, resetting to 1');
       }
       
       longestStreak = Math.max(currentStreak, streakData.longest_streak);
@@ -66,6 +74,7 @@ export const updateUserStreak = async (userId: string) => {
         streakHistory = streakHistory.slice(-30);
       }
       
+      console.log('Updating user_streaks table with new streak data');
       const { error: updateError } = await supabase
         .from('user_streaks')
         .update({
@@ -77,8 +86,12 @@ export const updateUserStreak = async (userId: string) => {
         })
         .eq('user_id', userId);
         
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Error updating streak:', updateError);
+        throw updateError;
+      }
     } else {
+      console.log('No streak data found, creating new record');
       streakHistory = [{ date: today, streak: 1 }];
       
       const { error: insertError } = await supabase
@@ -91,7 +104,10 @@ export const updateUserStreak = async (userId: string) => {
           streak_history: streakHistory
         }]);
         
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error('Error creating streak record:', insertError);
+        throw insertError;
+      }
     }
     
     if (currentStreak === 7 || currentStreak === 30 || currentStreak === 100) {
@@ -100,31 +116,38 @@ export const updateUserStreak = async (userId: string) => {
       });
     }
 
+    console.log(`Streak updated successfully: ${currentStreak}`);
     return currentStreak;
   } catch (error) {
-    console.error('Error updating streak:', error);
+    console.error('Error in updateUserStreak:', error);
     return null;
   }
 };
 
 // Share task notification helper
 export const sendShareTaskNotification = async (taskId: string, taskTitle: string, recipientEmail: string, senderName: string, senderEmail: string) => {
-  console.log("Invoking share-task-notification for:", recipientEmail);
+  console.log(`Sending share task notification for task ${taskId} to ${recipientEmail}`);
   
-  const { data, error } = await supabase.functions.invoke('share-task-notification', {
-    body: { 
-      taskId,
-      taskTitle,
-      recipientEmail,
-      senderName,
-      senderEmail
+  try {
+    const { data, error } = await supabase.functions.invoke('share-task-notification', {
+      body: { 
+        taskId,
+        taskTitle,
+        recipientEmail,
+        senderName,
+        senderEmail
+      }
+    });
+    
+    if (error) {
+      console.error('Error invoking share-task-notification function:', error);
+      throw new Error(`Failed to send notification email: ${error.message}`);
     }
-  });
-  
-  if (error) {
-    console.error('Error invoking edge function:', error);
-    throw new Error('Failed to send notification email');
+    
+    console.log('Notification sent successfully:', data);
+    return data;
+  } catch (e) {
+    console.error('Exception in sendShareTaskNotification:', e);
+    throw e;
   }
-  
-  return data;
 };

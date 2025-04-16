@@ -4,7 +4,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { X, Loader2 } from 'lucide-react';
-import { useTasksContext, Task } from '@/contexts/TasksContext';
+import { useTasksContext } from '@/contexts/TasksContext';
+import { Task } from '@/types/task.types';
 import { toast } from 'sonner';
 
 interface ShareTaskDialogProps {
