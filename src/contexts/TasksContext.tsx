@@ -15,6 +15,9 @@ export const useTasksContext = () => {
   return context;
 };
 
+// For backward compatibility, also export as useTasks
+export const useTasks = useTasksContext;
+
 // Re-export Task type for convenience
 export type { Task };
 

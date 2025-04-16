@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTasks } from '@/contexts/TasksContext';
+import { useTasksContext } from '@/contexts/TasksContext';
 import { useStreak } from '@/contexts/StreakContext';
 import DateSelector from '@/components/DateSelector';
 import TaskList from '@/components/TaskList';
@@ -34,11 +34,8 @@ const Dashboard: React.FC = () => {
     setSelectedDate,
     filteredTasks,
     tasks,
-    updateTask,
-    toggleTaskCompletion,
-    deleteTask,
     isLoading: tasksLoading
-  } = useTasks();
+  } = useTasksContext();
   const { streak, isLoading: streakLoading } = useStreak();
   const navigate = useNavigate();
   const [taskSummary, setTaskSummary] = useState<TaskSummary>({
@@ -160,9 +157,6 @@ const Dashboard: React.FC = () => {
               <TabsContent value="today">
                 <TaskList
                   tasks={filteredTasks}
-                  onToggle={toggleTaskCompletion}
-                  onUpdate={updateTask}
-                  onDelete={deleteTask}
                   isLoading={tasksLoading}
                 />
               </TabsContent>
@@ -220,9 +214,6 @@ const Dashboard: React.FC = () => {
                   </h3>
                   <TaskList
                     tasks={tasks.filter(task => task.stakes)}
-                    onToggle={toggleTaskCompletion}
-                    onUpdate={updateTask}
-                    onDelete={deleteTask}
                     isLoading={tasksLoading}
                   />
                 </div>

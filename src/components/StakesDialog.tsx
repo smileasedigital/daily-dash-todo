@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { useTasks, Task } from '@/contexts/TasksContext';
+import { useTasksContext, Task } from '@/contexts/TasksContext';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 
@@ -16,7 +16,7 @@ interface StakesDialogProps {
 const StakesDialog: React.FC<StakesDialogProps> = ({ isOpen, onClose, task }) => {
   const [stakes, setStakes] = useState(task.stakes || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { addStakes, removeStakes } = useTasks();
+  const { addStakes, removeStakes } = useTasksContext();
 
   // Update stakes when task changes or dialog opens
   useEffect(() => {

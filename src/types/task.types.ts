@@ -21,12 +21,12 @@ export interface TasksContextType {
   selectedDate: Date;
   setSelectedDate: (date: Date) => void;
   filteredTasks: Task[];
-  addTask: (title: string, stakes?: string, description?: string, priority?: 'high' | 'medium' | 'low', sharedWith?: string[], taskDate?: string) => Promise<void>;
+  addTask: (title: string, stakes?: string, description?: string, priority?: 'high' | 'medium' | 'low', sharedWith?: string[], taskDate?: string) => Promise<Task>;
   updateTask: (id: string, updates: Partial<Omit<Task, 'id'>>) => void;
   toggleTaskCompletion: (id: string) => void;
   deleteTask: (id: string) => void;
-  addStakes: (id: string, stakes: string) => void;
-  removeStakes: (id: string) => void;
+  addStakes: (id: string, stakes: string) => Promise<boolean>;
+  removeStakes: (id: string) => Promise<boolean>;
   shareTask: (id: string, email: string) => Promise<void>;
   unshareTask: (id: string, email: string) => Promise<void>;
   isLoading: boolean;

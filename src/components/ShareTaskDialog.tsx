@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { X, Loader2 } from 'lucide-react';
-import { useTasks, Task } from '@/contexts/TasksContext';
+import { useTasksContext, Task } from '@/contexts/TasksContext';
 import { toast } from 'sonner';
 
 interface ShareTaskDialogProps {
@@ -16,7 +16,7 @@ interface ShareTaskDialogProps {
 const ShareTaskDialog: React.FC<ShareTaskDialogProps> = ({ isOpen, onClose, task }) => {
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { shareTask, unshareTask } = useTasks();
+  const { shareTask, unshareTask } = useTasksContext();
 
   const validateEmail = (email: string): boolean => {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
